@@ -3,8 +3,8 @@
  * Telemetry Bus & Audit-Grade Observability (Section 2, 4, 10)
  */
 
-import { AgentExecutionLog, GateExecutionResult, TokenUsage } from '../core/types';
-import { GateEvaluationResult } from '../eval/evaluator.interface';
+import { AgentExecutionLog } from '../core/types';
+import { GateExecutionReport } from '../runtime/quality-gate-runner';
 
 export interface WorkflowTelemetrySummary {
   correlationId: string;
@@ -18,14 +18,14 @@ export interface WorkflowTelemetrySummary {
   gatesPassed: number;
   gatesWaived: number;
   gatesFailed: number;
-  gateResults: GateEvaluationResult[];
+  gateResults: GateExecutionReport[];
   agentLogs: AgentExecutionLog[];
   completedAt: string;
 }
 
 export class TelemetryBus {
   private logs: AgentExecutionLog[] = [];
-  private gateResults: GateEvaluationResult[] = [];
+  private gateResults: GateExecutionReport[] = [];
   private startTime: number = Date.now();
 
   constructor(public readonly correlationId: string) {}
@@ -34,7 +34,7 @@ export class TelemetryBus {
     this.logs.push(structuredClone(log));
   }
 
-  public recordGateResult(gateResult: GateEvaluationResult): void {
+  public recordGateResult(gateResult: GateExecutionReport): void {
     this.gateResults.push(structuredClone(gateResult));
   }
 

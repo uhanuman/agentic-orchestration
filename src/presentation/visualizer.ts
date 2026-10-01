@@ -28,8 +28,9 @@ export class PipelineVisualizer {
     for (const evt of result.stageEvents) {
       const icon = evt.status === 'COMPLETED' ? '[DONE]' : evt.status === 'FAILED' ? '[FAIL]' : '[..]';
       const durationStr = `${evt.durationMs}ms`.padStart(8);
+      const specTag = evt.specPath ? ` [spec: ${evt.specPath}]` : '';
       const details = evt.details ? ` - ${evt.details}` : '';
-      console.log(`  ${icon} ${durationStr}  ${evt.stage}${details}`);
+      console.log(`  ${icon} ${durationStr}  ${evt.stage}${specTag}${details}`);
     }
 
     if (result.requirement) {

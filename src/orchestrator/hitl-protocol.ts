@@ -5,7 +5,7 @@
 
 import { IContextStore } from '../core/context-store';
 import { ReleaseGateRecord, RequirementArtifact } from '../core/types';
-import { HumanWaiver } from '../eval/evaluator.interface';
+import { HumanWaiver } from '../runtime/quality-gate-runner';
 
 export interface AmbiguityClarificationTicket {
   ticketId: string;
