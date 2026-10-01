@@ -1,6 +1,10 @@
 /**
  * Enterprise Greenfield Agentic Quality Engineering Framework
  * Orchestration DAG Engine executing Markdown-defined Agents and Evals
+ *
+ * Enforces the 7-step Agent lifecycle across all pipeline stages:
+ *   Agent -> receives Context -> consumes Artifact IDs -> performs reasoning
+ *         -> generates Artifact IDs -> invokes EVAL -> passes Quality Gate -> publishes Event
  */
 
 import * as crypto from 'crypto';
@@ -12,6 +16,7 @@ import {
   TestCaseArtifact,
   AutomationBlueprintArtifact,
   ReleaseGateRecord,
+  AgentLifecycleEvent,
 } from '../core/types';
 import { ILLMProvider } from '../gateway/provider.interface';
 import {
@@ -54,6 +59,7 @@ export interface PipelineResult {
   releaseRecord?: ReleaseGateRecord;
   stageEvents: PipelineStageEvent[];
   gateResults: GateExecutionReport[];
+  lifecycleEvents: AgentLifecycleEvent[];
   telemetry: WorkflowTelemetrySummary;
   error?: string;
 }
@@ -91,10 +97,10 @@ export class DAGEngine {
 
     try {
       // ==========================================
-      // STAGE 1: Markdown Agent: AGT-REQ-001.md
+      // STAGE 1: Markdown Agent: 01.requirement-analysis.agent.md
       // ==========================================
       let t0 = Date.now();
-      const reqAgentSpec = 'agents/AGT-REQ-001.md';
+      const reqAgentSpec = 'agents/01.requirement-analysis.agent.md';
       logStage('Requirement Analysis Agent', reqAgentSpec, 'STARTED', 0);
       const reqAgent = new MarkdownAgentRunner(reqAgentSpec, this.contextStore, this.llmProvider);
       
@@ -110,7 +116,9 @@ ${input.rawText}
 `;
       const reqRes = await reqAgent.execute<{ requirement: RequirementArtifact; acceptanceCriteria: AcceptanceCriteriaArtifact[] }>(
         reqPrompt,
-        corrId
+        corrId,
+        [`REQ-${input.epicId}`],
+        { onEvent: (ev) => this.telemetryBus.recordLifecycleEvent(ev) }
       );
       requirement = reqRes.output.requirement;
       acceptanceCriteria = reqRes.output.acceptanceCriteria;
@@ -130,7 +138,7 @@ ${input.rawText}
       logStage('Requirement Analysis Agent', reqAgentSpec, 'COMPLETED', Date.now() - t0, `Decomposed into ${acceptanceCriteria.length} ACs`);
 
       // ==========================================
-      // STAGE 2: Markdown Gate: GATE-REQ-001 (EVAL-SCHEMA-001.md, EVAL-AMBIGUITY-SEMANTIC.md)
+      // STAGE 2: Markdown Gate: GATE-REQ-001 (01.schema-validator.eval.md, 04.ambiguity-evaluator.eval.md)
       // ==========================================
       t0 = Date.now();
       const gateReq = new QualityGateRunner(
@@ -139,8 +147,8 @@ ${input.rawText}
         'MAJOR',
         0.85,
         [
-          new MarkdownEvalRunner('evals/EVAL-SCHEMA-001.md', this.llmProvider),
-          new MarkdownEvalRunner('evals/EVAL-AMBIGUITY-SEMANTIC.md', this.llmProvider),
+          new MarkdownEvalRunner('evals/01.schema-validator.eval.md', this.llmProvider),
+          new MarkdownEvalRunner('evals/04.ambiguity-evaluator.eval.md', this.llmProvider),
         ]
       );
       const reqGateRes = await gateReq.evaluate(
@@ -150,17 +158,17 @@ ${input.rawText}
       );
       gateResults.push(reqGateRes);
       this.telemetryBus.recordGateResult(reqGateRes);
-      logStage('Quality Gate', 'evals/EVAL-AMBIGUITY-SEMANTIC.md', reqGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${reqGateRes.score} (${reqGateRes.status})`);
+      logStage('Quality Gate', 'evals/04.ambiguity-evaluator.eval.md', reqGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${reqGateRes.score} (${reqGateRes.status})`);
 
       if (reqGateRes.status === 'FAILED') {
         throw new Error(`Pipeline halted at GATE-REQ-001: ${JSON.stringify(reqGateRes.failingEvaluators)}`);
       }
 
       // ==========================================
-      // STAGE 3: Markdown Agent: AGT-DES-001.md
+      // STAGE 3: Markdown Agent: 02.test-design.agent.md
       // ==========================================
       t0 = Date.now();
-      const desAgentSpec = 'agents/AGT-DES-001.md';
+      const desAgentSpec = 'agents/02.test-design.agent.md';
       logStage('Test Design Agent', desAgentSpec, 'STARTED', 0);
       const desAgent = new MarkdownAgentRunner(desAgentSpec, this.contextStore, this.llmProvider);
 
@@ -175,7 +183,8 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       const desRes = await desAgent.execute<{ scenarios: ScenarioArtifact[]; testCases: TestCaseArtifact[] }>(
         desPrompt,
         corrId,
-        [requirement.id, ...acceptanceCriteria.map(a => a.id)]
+        [requirement.id, ...acceptanceCriteria.map(a => a.id)],
+        { onEvent: (ev) => this.telemetryBus.recordLifecycleEvent(ev) }
       );
       scenarios = desRes.output.scenarios;
       testCases = desRes.output.testCases;
@@ -194,42 +203,47 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       logStage('Test Design Agent', desAgentSpec, 'COMPLETED', Date.now() - t0, `Generated ${scenarios.length} Scenarios, ${testCases.length} Test Cases`);
 
       // ==========================================
-      // STAGE 4: Markdown Gate: GATE-DES-001 (EVAL-REFERENTIAL-001.md, EVAL-COVERAGE-001.md, EVAL-COMPLETENESS-SEMANTIC.md)
+      // STAGE 4: Markdown Gate: GATE-TEST-DESIGN-001 (02.referential-validator.eval.md, 03.coverage-calculator.eval.md, 05.completeness-evaluator.eval.md)
       // ==========================================
       t0 = Date.now();
       const gateDes = new QualityGateRunner(
-        'GATE-DES-001',
+        'GATE-TEST-DESIGN-001',
         'Test Design Coverage & Referential Gate',
         'MAJOR',
         0.85,
         [
-          new MarkdownEvalRunner('evals/EVAL-REFERENTIAL-001.md', this.llmProvider),
-          new MarkdownEvalRunner('evals/EVAL-COVERAGE-001.md', this.llmProvider),
-          new MarkdownEvalRunner('evals/EVAL-COMPLETENESS-SEMANTIC.md', this.llmProvider),
+          new MarkdownEvalRunner('evals/02.referential-validator.eval.md', this.llmProvider),
+          new MarkdownEvalRunner('evals/03.coverage-calculator.eval.md', this.llmProvider),
+          new MarkdownEvalRunner('evals/05.completeness-evaluator.eval.md', this.llmProvider),
         ]
       );
       const desGateRes = await gateDes.evaluate(
         { id: requirement.id, coverageMode: 'AC_TO_SCN' },
         this.contextStore,
-        input.waivers?.['GATE-DES-001']
+        input.waivers?.['GATE-TEST-DESIGN-001']
       );
       gateResults.push(desGateRes);
       this.telemetryBus.recordGateResult(desGateRes);
-      logStage('Quality Gate', 'evals/EVAL-COMPLETENESS-SEMANTIC.md', desGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${desGateRes.score} (${desGateRes.status})`);
+      logStage('Quality Gate', 'evals/05.completeness-evaluator.eval.md', desGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${desGateRes.score} (${desGateRes.status})`);
 
       if (desGateRes.status === 'FAILED') {
-        throw new Error(`Pipeline halted at GATE-DES-001: ${JSON.stringify(desGateRes.failingEvaluators)}`);
+        throw new Error(`Pipeline halted at GATE-TEST-DESIGN-001: ${JSON.stringify(desGateRes.failingEvaluators)}`);
       }
 
       // ==========================================
-      // STAGE 5: Markdown NFR Agents (AGT-SEC-001.md, AGT-PERF-001.md, AGT-A11Y-001.md)
+      // STAGE 5: Markdown NFR Agents (03.security-nfr.agent.md, 04.performance-nfr.agent.md, 05.accessibility-nfr.agent.md)
       // ==========================================
       t0 = Date.now();
       const nfrPrompt = `Requirement: [${requirement.id}] ${requirement.title}\nDomain: ${requirement.domain}\nRaw: ${requirement.rawText}`;
 
       // Security Agent
-      const secAgent = new MarkdownAgentRunner('agents/AGT-SEC-001.md', this.contextStore, this.llmProvider);
-      const secRes = await secAgent.execute<{ testCases: TestCaseArtifact[] }>(nfrPrompt, corrId, [requirement.id]);
+      const secAgent = new MarkdownAgentRunner('agents/03.security-nfr.agent.md', this.contextStore, this.llmProvider);
+      const secRes = await secAgent.execute<{ testCases: TestCaseArtifact[] }>(
+        nfrPrompt,
+        corrId,
+        [requirement.id],
+        { onEvent: (ev) => this.telemetryBus.recordLifecycleEvent(ev) }
+      );
       for (const tc of secRes.output.testCases) {
         tc.requirementId = requirement.id;
         await this.contextStore.saveArtifact('TC', tc);
@@ -238,8 +252,13 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       this.telemetryBus.recordAgentLog(secRes.log);
 
       // Performance Agent
-      const perfAgent = new MarkdownAgentRunner('agents/AGT-PERF-001.md', this.contextStore, this.llmProvider);
-      const perfRes = await perfAgent.execute<{ testCases: TestCaseArtifact[] }>(nfrPrompt, corrId, [requirement.id]);
+      const perfAgent = new MarkdownAgentRunner('agents/04.performance-nfr.agent.md', this.contextStore, this.llmProvider);
+      const perfRes = await perfAgent.execute<{ testCases: TestCaseArtifact[] }>(
+        nfrPrompt,
+        corrId,
+        [requirement.id],
+        { onEvent: (ev) => this.telemetryBus.recordLifecycleEvent(ev) }
+      );
       for (const tc of perfRes.output.testCases) {
         tc.requirementId = requirement.id;
         await this.contextStore.saveArtifact('TC', tc);
@@ -248,8 +267,13 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       this.telemetryBus.recordAgentLog(perfRes.log);
 
       // Accessibility Agent
-      const a11yAgent = new MarkdownAgentRunner('agents/AGT-A11Y-001.md', this.contextStore, this.llmProvider);
-      const a11yRes = await a11yAgent.execute<{ testCases: TestCaseArtifact[] }>(nfrPrompt, corrId, [requirement.id]);
+      const a11yAgent = new MarkdownAgentRunner('agents/05.accessibility-nfr.agent.md', this.contextStore, this.llmProvider);
+      const a11yRes = await a11yAgent.execute<{ testCases: TestCaseArtifact[] }>(
+        nfrPrompt,
+        corrId,
+        [requirement.id],
+        { onEvent: (ev) => this.telemetryBus.recordLifecycleEvent(ev) }
+      );
       for (const tc of a11yRes.output.testCases) {
         tc.requirementId = requirement.id;
         await this.contextStore.saveArtifact('TC', tc);
@@ -257,13 +281,13 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       }
       this.telemetryBus.recordAgentLog(a11yRes.log);
 
-      logStage('NFR Specialist Workforce', 'agents/AGT-SEC-001.md', 'COMPLETED', Date.now() - t0, `Added Sec, Perf, and A11y test cases (Total: ${testCases.length} TCs)`);
+      logStage('NFR Specialist Workforce', 'agents/03.security-nfr.agent.md', 'COMPLETED', Date.now() - t0, `Added Sec, Perf, and A11y test cases (Total: ${testCases.length} TCs)`);
 
       // ==========================================
-      // STAGE 6: Markdown SDET Agent: AGT-SDET-001.md
+      // STAGE 6: Markdown SDET Agent: 06.sdet-blueprint.agent.md
       // ==========================================
       t0 = Date.now();
-      const sdetAgentSpec = 'agents/AGT-SDET-001.md';
+      const sdetAgentSpec = 'agents/06.sdet-blueprint.agent.md';
       logStage('SDET Automation Blueprint Agent', sdetAgentSpec, 'STARTED', 0);
       const sdetAgent = new MarkdownAgentRunner(sdetAgentSpec, this.contextStore, this.llmProvider);
 
@@ -271,7 +295,8 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       const sdetRes = await sdetAgent.execute<{ blueprints: AutomationBlueprintArtifact[] }>(
         sdetPrompt,
         corrId,
-        testCases.map(t => t.id)
+        testCases.map(t => t.id),
+        { onEvent: (ev) => this.telemetryBus.recordLifecycleEvent(ev) }
       );
       automationBlueprints = sdetRes.output.blueprints;
       for (const aut of automationBlueprints) {
@@ -281,7 +306,7 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       logStage('SDET Automation Blueprint Agent', sdetAgentSpec, 'COMPLETED', Date.now() - t0, `Synthesized ${automationBlueprints.length} Automation Blueprints`);
 
       // ==========================================
-      // STAGE 7: Markdown Gate: GATE-SDET-001 (EVAL-COVERAGE-001.md)
+      // STAGE 7: Markdown Gate: GATE-SDET-001 (03.coverage-calculator.eval.md)
       // ==========================================
       t0 = Date.now();
       const gateSdet = new QualityGateRunner(
@@ -289,7 +314,7 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
         'P0/P1 Automation Contract Gate',
         'MAJOR',
         0.80,
-        [new MarkdownEvalRunner('evals/EVAL-COVERAGE-001.md', this.llmProvider)]
+        [new MarkdownEvalRunner('evals/03.coverage-calculator.eval.md', this.llmProvider)]
       );
       const sdetGateRes = await gateSdet.evaluate(
         { id: requirement.id, coverageMode: 'TC_TO_AUT' },
@@ -298,24 +323,29 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
       );
       gateResults.push(sdetGateRes);
       this.telemetryBus.recordGateResult(sdetGateRes);
-      logStage('Quality Gate', 'evals/EVAL-COVERAGE-001.md', sdetGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${sdetGateRes.score} (${sdetGateRes.status})`);
+      logStage('Quality Gate', 'evals/03.coverage-calculator.eval.md', sdetGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${sdetGateRes.score} (${sdetGateRes.status})`);
 
       // ==========================================
-      // STAGE 8: Markdown Agent: AGT-VAL-001.md
+      // STAGE 8: Markdown Agent: 07.test-validation.agent.md
       // ==========================================
       t0 = Date.now();
-      const valAgentSpec = 'agents/AGT-VAL-001.md';
+      const valAgentSpec = 'agents/07.test-validation.agent.md';
       logStage('Test Validation & Drift Agent', valAgentSpec, 'STARTED', 0);
       const valAgent = new MarkdownAgentRunner(valAgentSpec, this.contextStore, this.llmProvider);
 
       const valPrompt = `Validate downstream test artifacts against requirement: [${requirement.id}] ${requirement.title}`;
-      const valRes = await valAgent.execute<any>(valPrompt, corrId, [requirement.id]);
+      const valRes = await valAgent.execute<any>(
+        valPrompt,
+        corrId,
+        [requirement.id],
+        { onEvent: (ev) => this.telemetryBus.recordLifecycleEvent(ev) }
+      );
       validationReport = valRes.output;
       this.telemetryBus.recordAgentLog(valRes.log);
       logStage('Test Validation & Drift Agent', valAgentSpec, 'COMPLETED', Date.now() - t0, `Verdict: ${validationReport.verdict}, Hallucination: ${validationReport.hallucinationIndex}`);
 
       // ==========================================
-      // STAGE 9: Markdown Gate: GATE-VAL-001 (EVAL-DRIFT-SEMANTIC.md)
+      // STAGE 9: Markdown Gate: GATE-VAL-001 (06.drift-evaluator.eval.md)
       // ==========================================
       t0 = Date.now();
       const gateVal = new QualityGateRunner(
@@ -323,15 +353,15 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
         'Specification Drift & Hallucination Gate',
         'CRITICAL',
         0.90,
-        [new MarkdownEvalRunner('evals/EVAL-DRIFT-SEMANTIC.md', this.llmProvider)]
+        [new MarkdownEvalRunner('evals/06.drift-evaluator.eval.md', this.llmProvider)]
       );
       const valGateRes = await gateVal.evaluate(requirement, this.contextStore);
       gateResults.push(valGateRes);
       this.telemetryBus.recordGateResult(valGateRes);
-      logStage('Quality Gate', 'evals/EVAL-DRIFT-SEMANTIC.md', valGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${valGateRes.score} (${valGateRes.status})`);
+      logStage('Quality Gate', 'evals/06.drift-evaluator.eval.md', valGateRes.status === 'FAILED' ? 'FAILED' : 'COMPLETED', Date.now() - t0, `Score: ${valGateRes.score} (${valGateRes.status})`);
 
       // ==========================================
-      // STAGE 10: Release Quality Gate (GATES-POLICY.md)
+      // STAGE 10: Release Quality Gate (07.gates-policy.eval.md)
       // ==========================================
       t0 = Date.now();
       const allPassed = gateResults.every(g => g.status === 'PASSED' || g.status === 'WAIVED_WITH_APPROVAL');
@@ -342,7 +372,7 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
         blockingReason: allPassed ? undefined : 'One or more mandatory quality gates failed.',
         humanApprover: allPassed ? 'Automated Quality Gatekeeper' : undefined,
       });
-      logStage('Release Gate Authorization', 'evals/GATES-POLICY.md', 'COMPLETED', Date.now() - t0, `Status: ${releaseRecord.gateStatus}`);
+      logStage('Release Gate Authorization', 'evals/07.gates-policy.eval.md', 'COMPLETED', Date.now() - t0, `Status: ${releaseRecord.gateStatus}`);
 
       return {
         correlationId: corrId,
@@ -356,6 +386,7 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
         releaseRecord,
         stageEvents,
         gateResults,
+        lifecycleEvents: this.telemetryBus.getLifecycleEvents(),
         telemetry: this.telemetryBus.getSummary(),
       };
     } catch (err: any) {
@@ -372,6 +403,7 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
         releaseRecord,
         stageEvents,
         gateResults,
+        lifecycleEvents: this.telemetryBus.getLifecycleEvents(),
         telemetry: this.telemetryBus.getSummary(),
         error: err.message,
       };

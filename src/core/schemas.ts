@@ -193,7 +193,7 @@ export const EvaluatorExecutionResultSchema = z.object({
 });
 
 export const AgentExecutionLogSchema = z.object({
-  runId: z.string().uuid(),
+  runId: z.string().min(1),
   correlationId: z.string().min(1),
   agentId: z.string().min(1),
   agentVersion: z.string().min(1),
@@ -204,6 +204,7 @@ export const AgentExecutionLogSchema = z.object({
   outputArtifactIds: z.array(z.string()),
   evaluatorIds: z.array(z.string()),
   gateIds: z.array(z.string()),
+  nextAgents: z.array(z.string()).optional(),
   tokenUsage: TokenUsageSchema,
   durationMs: z.number().nonnegative(),
   evalResults: z.array(EvaluatorExecutionResultSchema),

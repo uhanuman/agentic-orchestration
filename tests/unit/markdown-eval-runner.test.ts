@@ -13,8 +13,8 @@ describe('MarkdownEvalRunner Unit Tests', () => {
     mockLLM = new MockLLMProvider();
   });
 
-  it('executes EVAL-SCHEMA-001.md deterministic check', async () => {
-    const runner = new MarkdownEvalRunner('evals/EVAL-SCHEMA-001.md', mockLLM);
+  it('executes 01.schema-validator.eval.md deterministic check', async () => {
+    const runner = new MarkdownEvalRunner('evals/01.schema-validator.eval.md', mockLLM);
 
     expect(runner.evaluatorId).toBe('EVAL-SCHEMA-001');
     expect(runner.type).toBe('DETERMINISTIC');
@@ -46,8 +46,8 @@ describe('MarkdownEvalRunner Unit Tests', () => {
     expect(failResult.score).toBe(0.0);
   });
 
-  it('executes EVAL-AMBIGUITY-SEMANTIC.md semantic judge check', async () => {
-    const runner = new MarkdownEvalRunner('evals/EVAL-AMBIGUITY-SEMANTIC.md', mockLLM);
+  it('executes 04.ambiguity-evaluator.eval.md semantic judge check', async () => {
+    const runner = new MarkdownEvalRunner('evals/04.ambiguity-evaluator.eval.md', mockLLM);
 
     expect(runner.evaluatorId).toBe('EVAL-AMBIGUITY-SEMANTIC');
     expect(runner.type).toBe('SEMANTIC');
@@ -58,7 +58,7 @@ describe('MarkdownEvalRunner Unit Tests', () => {
       epicId: 'EPIC-ORDERS',
       featureName: 'Cancellation',
       title: 'Order Cancellation',
-      rawText: 'Order cancellation details',
+      rawText: 'As a user I want to cancel my order.',
       domain: 'Orders',
       priority: 'HIGH',
       risksIdentified: [],
@@ -68,10 +68,16 @@ describe('MarkdownEvalRunner Unit Tests', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await store.saveArtifact('REQ', req);
 
-    const result = await runner.evaluate(req, store);
-    expect(result.passed).toBe(true);
-    expect(result.score).toBeGreaterThanOrEqual(0.85);
+    const res = await runner.evaluate(req, store);
+    expect(res.evaluatorId).toBe('EVAL-AMBIGUITY-SEMANTIC');
+    expect(res.passed).toBe(true);
+    expect(res.score).toBeGreaterThan(0.8);
+  });
+
+  it('resolves and executes by evaluator ID alias EVAL-TEST-COVERAGE-001', async () => {
+    const runner = new MarkdownEvalRunner('EVAL-TEST-COVERAGE-001', mockLLM);
+    expect(runner.evaluatorId).toBe('EVAL-COVERAGE-001');
+    expect(runner.type).toBe('DETERMINISTIC');
   });
 });

@@ -3,7 +3,7 @@
  * Telemetry Bus & Audit-Grade Observability (Section 2, 4, 10)
  */
 
-import { AgentExecutionLog } from '../core/types';
+import { AgentExecutionLog, AgentLifecycleEvent } from '../core/types';
 import { GateExecutionReport } from '../runtime/quality-gate-runner';
 
 export interface WorkflowTelemetrySummary {
@@ -20,12 +20,15 @@ export interface WorkflowTelemetrySummary {
   gatesFailed: number;
   gateResults: GateExecutionReport[];
   agentLogs: AgentExecutionLog[];
+  lifecycleEvents: AgentLifecycleEvent[];
   completedAt: string;
 }
 
 export class TelemetryBus {
   private logs: AgentExecutionLog[] = [];
   private gateResults: GateExecutionReport[] = [];
+  private lifecycleEvents: AgentLifecycleEvent[] = [];
+  private listeners: Array<(event: AgentLifecycleEvent) => void> = [];
   private startTime: number = Date.now();
 
   constructor(public readonly correlationId: string) {}
@@ -36,6 +39,25 @@ export class TelemetryBus {
 
   public recordGateResult(gateResult: GateExecutionReport): void {
     this.gateResults.push(structuredClone(gateResult));
+  }
+
+  public recordLifecycleEvent(event: AgentLifecycleEvent): void {
+    const cloned = structuredClone(event);
+    this.lifecycleEvents.push(cloned);
+    for (const listener of this.listeners) {
+      listener(cloned);
+    }
+  }
+
+  public onLifecycleEvent(listener: (event: AgentLifecycleEvent) => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  public getLifecycleEvents(): AgentLifecycleEvent[] {
+    return structuredClone(this.lifecycleEvents);
   }
 
   public getSummary(): WorkflowTelemetrySummary {
@@ -72,7 +94,9 @@ export class TelemetryBus {
       gatesFailed,
       gateResults: structuredClone(this.gateResults),
       agentLogs: structuredClone(this.logs),
+      lifecycleEvents: structuredClone(this.lifecycleEvents),
       completedAt: new Date().toISOString(),
     };
   }
 }
+

@@ -216,8 +216,19 @@ export interface EvaluatorExecutionResult {
 export type GateExecutionResult = 'PASSED' | 'FAILED' | 'NEEDS_RETRY' | 'ESCALATED';
 export type AgentFinalStatus = 'SUCCESS' | 'FAILURE' | 'CIRCUIT_BROKEN';
 
+export interface AgentLifecycleEvent {
+  agentId: string;
+  runId: string;
+  inputArtifacts: string[];
+  outputArtifacts: string[];
+  evaluatorIds: string[];
+  gateIds: string[];
+  nextAgents: string[];
+  timestamp?: string;
+}
+
 export interface AgentExecutionLog {
-  runId: string;                       // [System] UUID
+  runId: string;                       // [System] UUID / Run ID
   correlationId: string;               // [System] Distributed workflow trace ID
   agentId: string;                     // [System] e.g., "AGT-TEST-DESIGN-001"
   agentVersion: string;                // [System] SemVer
@@ -228,6 +239,7 @@ export interface AgentExecutionLog {
   outputArtifactIds: string[];         // [Deterministic]
   evaluatorIds: string[];              // [Deterministic]
   gateIds: string[];                   // [Deterministic]
+  nextAgents?: string[];               // [Orchestration] Downstream agent IDs
   tokenUsage: TokenUsage;              // [System]
   durationMs: number;                  // [System]
   evalResults: EvaluatorExecutionResult[]; // [Deterministic/AI]

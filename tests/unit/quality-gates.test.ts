@@ -19,7 +19,7 @@ describe('QualityGateRunner with Markdown Gate Policies', () => {
       'Critical Integrity Gate',
       'CRITICAL',
       1.0,
-      [new MarkdownEvalRunner('evals/EVAL-SCHEMA-001.md', mockLLM)]
+      [new MarkdownEvalRunner('evals/01.schema-validator.eval.md', mockLLM)]
     );
 
     const malformed = { id: 'BAD_ID_PATTERN' };
@@ -44,7 +44,7 @@ describe('QualityGateRunner with Markdown Gate Policies', () => {
       'Major Coverage Gate',
       'MAJOR',
       1.0,
-      [new MarkdownEvalRunner('evals/EVAL-COVERAGE-001.md', mockLLM)]
+      [new MarkdownEvalRunner('evals/03.coverage-calculator.eval.md', mockLLM)]
     );
 
     const emptyReq = { id: 'REQ-1001', coverageMode: 'AC_TO_SCN' };
@@ -59,8 +59,8 @@ describe('QualityGateRunner with Markdown Gate Policies', () => {
       waiverJustification: 'Accepted partial coverage for phase 1',
       approvedAt: new Date().toISOString(),
     });
-
     expect(waivedReport.status).toBe('WAIVED_WITH_APPROVAL');
+    expect(waivedReport.waiver).toBeDefined();
     expect(waivedReport.waiver?.humanApprover).toBe('Principal Architect Bob');
   });
 });

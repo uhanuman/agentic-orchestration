@@ -103,6 +103,7 @@ export class MockLLMProvider implements ILLMProvider {
       id: 'default-req-analysis',
       matcher: p =>
         p.systemPrompt.includes('AGT-REQ-001') ||
+        p.systemPrompt.includes('AGT-REQUIREMENT-001') ||
         p.userPrompt.includes('Requirement Analysis') ||
         p.userPrompt.includes('As a user') ||
         p.userPrompt.includes('As a customer'),
@@ -191,6 +192,7 @@ export class MockLLMProvider implements ILLMProvider {
       id: 'default-test-design',
       matcher: p =>
         p.systemPrompt.includes('AGT-DES-001') ||
+        p.systemPrompt.includes('AGT-TEST-DESIGN-001') ||
         p.userPrompt.includes('Test Design') ||
         p.userPrompt.includes('Generate test scenarios'),
       response: () => {
@@ -323,6 +325,7 @@ export class MockLLMProvider implements ILLMProvider {
       id: 'default-sec-nfr',
       matcher: p =>
         p.systemPrompt.includes('AGT-SEC-001') ||
+        p.systemPrompt.includes('AGT-SECURITY-001') ||
         p.userPrompt.includes('Security') ||
         p.userPrompt.includes('OWASP'),
       response: () => {
@@ -363,6 +366,7 @@ export class MockLLMProvider implements ILLMProvider {
       id: 'default-perf-nfr',
       matcher: p =>
         p.systemPrompt.includes('AGT-PERF-001') ||
+        p.systemPrompt.includes('AGT-PERFORMANCE-001') ||
         p.userPrompt.includes('Performance') ||
         p.userPrompt.includes('Latency'),
       response: () => {
@@ -404,6 +408,7 @@ export class MockLLMProvider implements ILLMProvider {
       id: 'default-a11y-nfr',
       matcher: p =>
         p.systemPrompt.includes('AGT-A11Y-001') ||
+        p.systemPrompt.includes('AGT-ACCESSIBILITY-001') ||
         p.userPrompt.includes('Accessibility') ||
         p.userPrompt.includes('WCAG'),
       response: () => {
@@ -448,7 +453,9 @@ export class MockLLMProvider implements ILLMProvider {
       id: 'default-sdet-blueprint',
       matcher: p =>
         p.systemPrompt.includes('AGT-SDET-001') ||
+        p.systemPrompt.includes('AGT-SDET-BLUEPRINT-001') ||
         p.userPrompt.includes('Automation Blueprint') ||
+        p.userPrompt.includes('testCases:') ||
         p.userPrompt.includes('codeBlueprint'),
       response: () => {
         const now = new Date().toISOString();
@@ -599,6 +606,7 @@ test('Cancellation modal accessibility scan', async ({ page }) => {
       id: 'default-validation-drift',
       matcher: p =>
         p.systemPrompt.includes('AGT-VAL-001') ||
+        p.systemPrompt.includes('AGT-VALIDATION-001') ||
         p.userPrompt.includes('Drift') ||
         p.userPrompt.includes('hallucinationIndex'),
       response: () => {

@@ -40,7 +40,8 @@ export class MarkdownEvalRunner {
     this.spec = MarkdownSpecParser.parseFile(specPath);
     this.evaluatorId = this.spec.metadata['id'] || pathBase(specPath);
     this.evaluatorName = this.spec.metadata['name'] || this.spec.title;
-    this.type = (this.spec.metadata['type']?.toUpperCase() as any) || 'DETERMINISTIC';
+    const rawType = (this.spec.metadata['type'] || '').toUpperCase();
+    this.type = rawType.includes('SEMANTIC') ? 'SEMANTIC' : 'DETERMINISTIC';
     this.threshold = parseFloat(this.spec.metadata['threshold'] || '0.85');
   }
 

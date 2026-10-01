@@ -33,8 +33,20 @@ export class PipelineVisualizer {
       console.log(`  ${icon} ${durationStr}  ${evt.stage}${specTag}${details}`);
     }
 
+    if (result.lifecycleEvents && result.lifecycleEvents.length > 0) {
+      console.log('\n--- 2. AGENT 7-STEP LIFECYCLE AUDIT TRAIL ---');
+      for (const ev of result.lifecycleEvents) {
+        console.log(`  [Agent]: ${ev.agentId} [RunId: ${ev.runId}]`);
+        console.log(`    ├── Consumes:    ${ev.inputArtifacts.join(', ') || 'NONE'}`);
+        console.log(`    ├── Generates:   ${ev.outputArtifacts.join(', ') || 'NONE'}`);
+        console.log(`    ├── Invokes:     ${ev.evaluatorIds.join(', ') || 'NONE'}`);
+        console.log(`    ├── Passes Gate: ${ev.gateIds.join(', ') || 'NONE'}`);
+        console.log(`    └── Next Agents: ${ev.nextAgents.join(', ') || 'END OF PIPELINE'}`);
+      }
+    }
+
     if (result.requirement) {
-      console.log('\n--- 2. CORE DOMAIN ARTIFACT TRACEABILITY ---');
+      console.log('\n--- 3. CORE DOMAIN ARTIFACT TRACEABILITY ---');
       console.log(`  Requirement:    [${result.requirement.id}] ${result.requirement.title}`);
       console.log(`    Domain:       ${result.requirement.domain} (Priority: ${result.requirement.priority})`);
       console.log(`    Acceptance Criteria (${result.acceptanceCriteria.length} criteria):`);
@@ -55,7 +67,7 @@ export class PipelineVisualizer {
       }
     }
 
-    console.log('\n--- 3. DUAL-EVAL QUALITY GATES ---');
+    console.log('\n--- 4. DUAL-EVAL QUALITY GATES ---');
     for (const gate of result.gateResults) {
       const statusTag = gate.status === 'PASSED' 
         ? '[PASSED]' 
@@ -73,7 +85,7 @@ export class PipelineVisualizer {
     }
 
     if (result.validationReport) {
-      console.log('\n--- 4. TEST VALIDATION & DRIFT AUDIT ---');
+      console.log('\n--- 5. TEST VALIDATION & DRIFT AUDIT ---');
       console.log(`  Verdict:              ${result.validationReport.verdict}`);
       console.log(`  Hallucination Index:  ${(result.validationReport.hallucinationIndex * 100).toFixed(1)}%`);
       console.log(`  Grounding Confidence: ${(result.validationReport.groundingConfidence * 100).toFixed(1)}%`);
@@ -81,7 +93,7 @@ export class PipelineVisualizer {
       console.log(`  Rationale:            ${result.validationReport.rationale}`);
     }
 
-    console.log('\n--- 5. OBSERVABILITY & TOKEN TELEMETRY ---');
+    console.log('\n--- 6. OBSERVABILITY & TOKEN TELEMETRY ---');
     const tel = result.telemetry;
     console.log(`  Total Duration:       ${tel.totalDurationMs} ms`);
     console.log(`  Agent Executions:     ${tel.agentExecutions}`);
