@@ -80,33 +80,33 @@ Every entity in the Quality Engineering lifecycle is a first-class, immutable, v
 
 ## 3. Specialized Agent Workforce
 
-All agent specifications and prompts are documented in `specs/agents/`:
+All executable agent specifications and prompts are documented in `agents/`:
 
 | Agent ID | Name | Role & Responsibility | Markdown Spec |
 | :--- | :--- | :--- | :--- |
-| `AGT-REQ-001` | Requirement Analysis Agent | Interrogates raw user stories, extracts Given-When-Then ACs, scores ambiguity, flags risks | [`specs/agents/AGT-REQ-001.md`](specs/agents/AGT-REQ-001.md) |
-| `AGT-DES-001` | Test Design Agent | Answers *"WHAT needs to be tested?"* using BVA, equivalence partitions, negative & abuse paths | [`specs/agents/AGT-DES-001.md`](specs/agents/AGT-DES-001.md) |
-| `AGT-SEC-001` | Security NFR Agent | Maps OWASP Top 10, AuthN/AuthZ bypass, BOLA/IDOR, and data leakage abuse cases | [`specs/agents/AGT-SEC-001.md`](specs/agents/AGT-SEC-001.md) |
-| `AGT-PERF-001` | Performance NFR Agent | Derives concurrency, throughput, and p95/p99 latency ceilings from SLAs | [`specs/agents/AGT-PERF-001.md`](specs/agents/AGT-PERF-001.md) |
-| `AGT-A11Y-001` | Accessibility NFR Agent | Maps UI flows to WCAG 2.1 Level AA/AAA criteria (focus, screen readers, contrast) | [`specs/agents/AGT-A11Y-001.md`](specs/agents/AGT-A11Y-001.md) |
-| `AGT-SDET-001` | SDET Blueprint Agent | Answers *"HOW can approved tests be automated?"*, produces tool-agnostic code blueprints | [`specs/agents/AGT-SDET-001.md`](specs/agents/AGT-SDET-001.md) |
-| `AGT-VAL-001` | Validation & Drift Agent | Detects hallucinations, ungrounded assertions, and specification drift | [`specs/agents/AGT-VAL-001.md`](specs/agents/AGT-VAL-001.md) |
+| `AGT-REQ-001` | Requirement Analysis Agent | Interrogates raw user stories, extracts Given-When-Then ACs, scores ambiguity, flags risks | [`agents/01.requirement-analysis.agent.md`](agents/01.requirement-analysis.agent.md) |
+| `AGT-DES-001` | Test Design Agent | Answers *"WHAT needs to be tested?"* using Test Pyramid, BVA, equivalence partitions, negative & abuse paths | [`agents/02.test-design.agent.md`](agents/02.test-design.agent.md) |
+| `AGT-SEC-001` | Security NFR Agent | Maps OWASP Top 10, AuthN/AuthZ bypass, BOLA/IDOR, and data leakage abuse cases | [`agents/03.security-nfr.agent.md`](agents/03.security-nfr.agent.md) |
+| `AGT-PERF-001` | Performance NFR Agent | Derives concurrency, throughput, and p95/p99 latency ceilings from SLAs | [`agents/04.performance-nfr.agent.md`](agents/04.performance-nfr.agent.md) |
+| `AGT-A11Y-001` | Accessibility NFR Agent | Maps UI flows to WCAG 2.1 Level AA/AAA criteria (focus, screen readers, contrast) | [`agents/05.accessibility-nfr.agent.md`](agents/05.accessibility-nfr.agent.md) |
+| `AGT-SDET-001` | SDET Blueprint Agent | Answers *"HOW can approved tests be automated?"*, produces tool-agnostic code blueprints | [`agents/06.sdet-blueprint.agent.md`](agents/06.sdet-blueprint.agent.md) |
+| `AGT-VAL-001` | Validation & Drift Agent | Detects hallucinations, ungrounded assertions, and specification drift | [`agents/07.test-validation.agent.md`](agents/07.test-validation.agent.md) |
 
 ---
 
 ## 4. Dual-EVAL & Quality Gate Engine
 
-All evaluator specifications and policies are documented in `specs/evals/`:
+All evaluator specifications and policies are documented in `evals/`:
 
 | Evaluator ID | Type | Target / Objective | Markdown Spec |
 | :--- | :--- | :--- | :--- |
-| `EVAL-SCHEMA-001` | `DETERMINISTIC` | Validates JSON schema adherence with 0 LLM cost | [`specs/evals/EVAL-SCHEMA-001.md`](specs/evals/EVAL-SCHEMA-001.md) |
-| `EVAL-REFERENTIAL-001` | `DETERMINISTIC` | Enforces foreign keys and bidirectional lineage in Context Store | [`specs/evals/EVAL-REFERENTIAL-001.md`](specs/evals/EVAL-REFERENTIAL-001.md) |
-| `EVAL-COVERAGE-001` | `DETERMINISTIC` | Computes AC-to-Scenario, Scenario-to-TC, and P0/P1 Automation ratios | [`specs/evals/EVAL-COVERAGE-001.md`](specs/evals/EVAL-COVERAGE-001.md) |
-| `EVAL-AMBIGUITY-SEMANTIC` | `SEMANTIC` | LLM-as-a-judge for requirement ambiguity (Tolerance: $\le 0.15$) | [`specs/evals/EVAL-AMBIGUITY-SEMANTIC.md`](specs/evals/EVAL-AMBIGUITY-SEMANTIC.md) |
-| `EVAL-COMPLETENESS-SEMANTIC` | `SEMANTIC` | LLM-as-a-judge for edge-case & scenario completeness ($\ge 0.85$) | [`specs/evals/EVAL-COMPLETENESS-SEMANTIC.md`](specs/evals/EVAL-COMPLETENESS-SEMANTIC.md) |
-| `EVAL-DRIFT-SEMANTIC` | `SEMANTIC` | LLM-as-a-judge for hallucination & drift index ($\le 0.10$) | [`specs/evals/EVAL-DRIFT-SEMANTIC.md`](specs/evals/EVAL-DRIFT-SEMANTIC.md) |
-| `GATES-POLICY` | `POLICY` | Hierarchy rules: Critical (Zero Bypass), Major (Waiver Allowed), Minor | [`specs/evals/GATES-POLICY.md`](specs/evals/GATES-POLICY.md) |
+| `EVAL-SCHEMA-001` | `DETERMINISTIC` | Validates JSON schema adherence with 0 LLM cost | [`evals/01.schema-validator.eval.md`](evals/01.schema-validator.eval.md) |
+| `EVAL-REFERENTIAL-001` | `DETERMINISTIC` | Enforces foreign keys and bidirectional lineage in Context Store | [`evals/02.referential-validator.eval.md`](evals/02.referential-validator.eval.md) |
+| `EVAL-COVERAGE-001` | `DETERMINISTIC` | Computes AC-to-Scenario, Scenario-to-TC, and P0/P1 Automation ratios | [`evals/03.coverage-calculator.eval.md`](evals/03.coverage-calculator.eval.md) |
+| `EVAL-AMBIGUITY-SEMANTIC` | `SEMANTIC` | LLM-as-a-judge for requirement ambiguity (Tolerance: $\le 0.15$) | [`evals/04.ambiguity-evaluator.eval.md`](evals/04.ambiguity-evaluator.eval.md) |
+| `EVAL-COMPLETENESS-SEMANTIC` | `SEMANTIC` | LLM-as-a-judge for edge-case & scenario completeness ($\ge 0.85$) | [`evals/05.completeness-evaluator.eval.md`](evals/05.completeness-evaluator.eval.md) |
+| `EVAL-DRIFT-SEMANTIC` | `SEMANTIC` | LLM-as-a-judge for hallucination & drift index ($\le 0.10$) | [`evals/06.drift-evaluator.eval.md`](evals/06.drift-evaluator.eval.md) |
+| `GATES-POLICY` | `POLICY` | Hierarchy rules: Critical (Zero Bypass), Major (Waiver Allowed), Minor | [`evals/07.gates-policy.eval.md`](evals/07.gates-policy.eval.md) |
 
 ### Quality Gate Hierarchy
 1. **Critical Gate (Blocker - No Bypass):** Zero broken schema rules, 100% referential integrity, zero Sev-1 security gaps.

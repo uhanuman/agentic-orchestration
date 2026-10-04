@@ -1,0 +1,771 @@
+[
+  {
+    "id": "TC-INVENTREE-001",
+    "scenarioId": "SCN-INVENTREE-001",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-001",
+    "title": "API - POST /api/part/category/ creates root and nested categories",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "InvenTree instance is running with test database initialized",
+      "Valid authentication token available with write permissions"
+    ],
+    "testDataRequirements": {
+      "rootPayload": "{\"name\": \"Mechanical Hardware\", \"description\": \"Fasteners and brackets\"}",
+      "childPayload": "{\"name\": \"Bolts & Screws\", \"parent\": <rootId>, \"description\": \"Metric bolts\"}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send POST request to /api/part/category/ with rootPayload and header 'Authorization: Token <token>'",
+        "expectedResult": "HTTP 201 Created returned with id, name='Mechanical Hardware', parent=null, and pathstring='Mechanical Hardware'"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send POST request to /api/part/category/ with childPayload referencing rootId and header 'Authorization: Token <token>'",
+        "expectedResult": "HTTP 201 Created returned with integer id, parent=<rootId>, and pathstring='Mechanical Hardware/Bolts & Screws'"
+      }
+    ],
+    "postConditions": [
+      "Both categories exist in database and can be retrieved via GET /api/part/category/{id}/"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-002",
+    "scenarioId": "SCN-INVENTREE-002",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-001",
+    "title": "API - POST /api/part/category/ validation constraints and duplicate name rejection",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Root category 'Fasteners' already exists in the database",
+      "Valid authentication token available"
+    ],
+    "testDataRequirements": {
+      "emptyNamePayload": "{\"name\": \"\"}",
+      "longNamePayload": "{\"name\": \"This category name exceeds the one hundred character maximum limit imposed by the InvenTree database schema validation rule set\"}",
+      "duplicateNamePayload": "{\"name\": \"Fasteners\"}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send POST to /api/part/category/ with emptyNamePayload",
+        "expectedResult": "HTTP 400 Bad Request returned with validation error on name field"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send POST to /api/part/category/ with longNamePayload",
+        "expectedResult": "HTTP 400 Bad Request returned indicating maximum 100 character constraint violation"
+      },
+      {
+        "stepIndex": 3,
+        "action": "Send POST to /api/part/category/ with duplicateNamePayload under root scope (parent: null)",
+        "expectedResult": "HTTP 400 Bad Request returned indicating category name must be unique within same parent scope"
+      }
+    ],
+    "postConditions": [
+      "No invalid category records are inserted into the database"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-003",
+    "scenarioId": "SCN-INVENTREE-003",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-002",
+    "title": "API - GET /api/part/category/ hierarchy filtering and ordering",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Database populated with 2 root categories ('Electronics', 'Mechanics') and 2 children under 'Electronics' ('Passives', 'Actives')"
+    ],
+    "testDataRequirements": {
+      "parentFilter": "parent=<electronicsId>",
+      "rootFilter": "parent=null",
+      "ordering": "ordering=name"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/category/?parent=null",
+        "expectedResult": "HTTP 200 OK returned containing only the 2 root categories ('Electronics', 'Mechanics')"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send GET /api/part/category/?parent=<electronicsId>",
+        "expectedResult": "HTTP 200 OK returned containing only direct child categories ('Passives', 'Actives')"
+      },
+      {
+        "stepIndex": 3,
+        "action": "Send GET /api/part/category/?ordering=name",
+        "expectedResult": "HTTP 200 OK returned with categories ordered alphabetically by name"
+      }
+    ],
+    "postConditions": [
+      "Read queries execute without state side-effects"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-004",
+    "scenarioId": "SCN-INVENTREE-004",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-003",
+    "title": "API - GET /api/part/category/{id}/ detail and pathstring verification",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Category hierarchy 'Assemblies/Power Supplies' exists with 3 assigned parts"
+    ],
+    "testDataRequirements": {
+      "targetCategoryId": "<powerSuppliesId>"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/category/<powerSuppliesId>/",
+        "expectedResult": "HTTP 200 OK returned with id, name='Power Supplies', pathstring='Assemblies/Power Supplies', and part_count=3"
+      }
+    ],
+    "postConditions": [
+      "Detail payload adheres strictly to schema"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-005",
+    "scenarioId": "SCN-INVENTREE-005",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-003",
+    "title": "API - GET /api/part/category/{id}/ returns 404 for non-existent category",
+    "type": "FUNCTIONAL",
+    "priority": "P2",
+    "preconditions": [
+      "InvenTree instance is running"
+    ],
+    "testDataRequirements": {
+      "nonExistentId": "999999"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/category/999999/",
+        "expectedResult": "HTTP 404 Not Found returned with error details"
+      }
+    ],
+    "postConditions": [
+      "No database changes"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-006",
+    "scenarioId": "SCN-INVENTREE-006",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-004",
+    "title": "API - PUT /api/part/category/{id}/ updates name and propagates pathstring",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Parent category 'Robotics' exists with child category 'Sensors'",
+      "Sensors has pathstring 'Robotics/Sensors'"
+    ],
+    "testDataRequirements": {
+      "updatePayload": "{\"name\": \"Advanced Robotics\", \"description\": \"Updated robotics section\"}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send PUT /api/part/category/<roboticsId>/ with updatePayload and auth header",
+        "expectedResult": "HTTP 200 OK returned with updated name 'Advanced Robotics'"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send GET /api/part/category/<sensorsId>/ to inspect child category pathstring",
+        "expectedResult": "HTTP 200 OK returned with updated pathstring 'Advanced Robotics/Sensors'"
+      }
+    ],
+    "postConditions": [
+      "All descendant categories reflect updated pathstring"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-007",
+    "scenarioId": "SCN-INVENTREE-007",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-004",
+    "title": "DB - PUT /api/part/category/{id}/ rejects circular hierarchy cycle",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "Category A is parent of Category B, Category B is parent of Category C"
+    ],
+    "testDataRequirements": {
+      "circularPayload": "{\"name\": \"Category A\", \"parent\": <categoryCId>}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send PUT /api/part/category/<categoryAId>/ with circularPayload attempting to set parent to Category C",
+        "expectedResult": "HTTP 400 Bad Request returned preventing circular hierarchy cycle (Category A -> B -> C -> A)"
+      }
+    ],
+    "postConditions": [
+      "Hierarchy remains acyclic; Category A parent remains null"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-008",
+    "scenarioId": "SCN-INVENTREE-008",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-005",
+    "title": "API - DELETE /api/part/category/{id}/ successfully deletes empty category",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "An empty category 'Temporary Category' exists with zero parts and zero child categories"
+    ],
+    "testDataRequirements": {
+      "targetId": "<tempCategoryId>"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send DELETE /api/part/category/<tempCategoryId>/ with auth header",
+        "expectedResult": "HTTP 204 No Content returned"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send GET /api/part/category/<tempCategoryId>/",
+        "expectedResult": "HTTP 404 Not Found confirms category was removed"
+      }
+    ],
+    "postConditions": [
+      "Target category no longer exists in database"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-009",
+    "scenarioId": "SCN-INVENTREE-009",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-005",
+    "title": "DB - DELETE /api/part/category/{id}/ blocked when category contains parts",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "Category 'Motors' contains 2 assigned parts"
+    ],
+    "testDataRequirements": {
+      "motorsCategoryId": "<motorsId>"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send DELETE /api/part/category/<motorsId>/ with auth header",
+        "expectedResult": "HTTP 400 Bad Request returned with error message stating category cannot be deleted while it contains parts"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send GET /api/part/category/<motorsId>/",
+        "expectedResult": "HTTP 200 OK confirms category still exists and parts remain intact"
+      }
+    ],
+    "postConditions": [
+      "Category and all assigned parts remain completely preserved"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-010",
+    "scenarioId": "SCN-INVENTREE-010",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-006",
+    "title": "API - POST /api/part/ creates new Part with mandatory and optional attributes",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "Category 'Resistors' exists with known integer ID",
+      "Valid authentication token available"
+    ],
+    "testDataRequirements": {
+      "partPayload": "{\"name\": \"10k Ohm Resistor 0805\", \"category\": <resistorsId>, \"IPN\": \"RES-0805-10K\", \"description\": \"Surface mount chip resistor 1%\", \"purchaseable\": true, \"saleable\": true}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send POST /api/part/ with partPayload and auth header",
+        "expectedResult": "HTTP 201 Created returned with integer id, name, category, IPN='RES-0805-10K', and active=true default"
+      }
+    ],
+    "postConditions": [
+      "New part is queryable via GET /api/part/{id}/ and appears in part catalogue"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-011",
+    "scenarioId": "SCN-INVENTREE-011",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-006",
+    "title": "API - POST /api/part/ input validation and duplicate IPN rejection",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "Existing part exists with IPN 'MCU-STM32F401'",
+      "Valid authentication token available"
+    ],
+    "testDataRequirements": {
+      "missingName": "{\"category\": 1}",
+      "invalidCategory": "{\"name\": \"Test Part\", \"category\": 999999}",
+      "duplicateIpn": "{\"name\": \"Another MCU\", \"category\": 1, \"IPN\": \"MCU-STM32F401\"}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send POST /api/part/ with missingName",
+        "expectedResult": "HTTP 400 Bad Request returned with error on required field 'name'"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send POST /api/part/ with invalidCategory",
+        "expectedResult": "HTTP 400 Bad Request returned with invalid foreign key error on 'category'"
+      },
+      {
+        "stepIndex": 3,
+        "action": "Send POST /api/part/ with duplicateIpn",
+        "expectedResult": "HTTP 400 Bad Request returned stating IPN must be globally unique"
+      }
+    ],
+    "postConditions": [
+      "No duplicate or malformed part records inserted"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-012",
+    "scenarioId": "SCN-INVENTREE-012",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-007",
+    "title": "API - GET /api/part/ paginated list envelope and response time SLA",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Database populated with at least 50 distinct parts"
+    ],
+    "testDataRequirements": {
+      "paginationParams": "limit=15&offset=0"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/?limit=15&offset=0 and measure latency",
+        "expectedResult": "HTTP 200 OK returned within 2,000ms with envelope containing count >= 50, next URL, previous=null, and results array with length 15"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Inspect first element of results array",
+        "expectedResult": "Item contains id, name, description, category object/ID, IPN, and active status"
+      }
+    ],
+    "postConditions": [
+      "Response adheres to pagination contract"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-013",
+    "scenarioId": "SCN-INVENTREE-0013",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-007",
+    "title": "API - GET /api/part/ negative pagination boundary handling",
+    "type": "FUNCTIONAL",
+    "priority": "P2",
+    "preconditions": [
+      "InvenTree instance is running"
+    ],
+    "testDataRequirements": {
+      "negativeLimit": "limit=-5&offset=0",
+      "negativeOffset": "limit=10&offset=-10"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/?limit=-5&offset=0",
+        "expectedResult": "HTTP 400 Bad Request returned rejecting negative limit"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send GET /api/part/?limit=10&offset=-10",
+        "expectedResult": "HTTP 400 Bad Request returned rejecting negative offset"
+      }
+    ],
+    "postConditions": [
+      "No unexpected internal server errors (500)"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-014",
+    "scenarioId": "SCN-INVENTREE-014",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-008",
+    "title": "API - GET /api/part/{id}/ detail inspection with complete fields",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Part exists with known ID, full flags, and units='pcs'"
+    ],
+    "testDataRequirements": {
+      "targetPartId": "<partId>"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/<partId>/",
+        "expectedResult": "HTTP 200 OK returned with id, name, description, category, IPN, active, purchaseable, saleable, trackable, virtual, units, minimum_stock"
+      }
+    ],
+    "postConditions": [
+      "All fields match database record"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-015",
+    "scenarioId": "SCN-INVENTREE-015",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-009",
+    "title": "API - PUT /api/part/{id}/ full replacement update and boolean defaults",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Part exists with purchaseable=true, saleable=true"
+    ],
+    "testDataRequirements": {
+      "fullUpdatePayload": "{\"name\": \"Updated Part Name\", \"category\": 1, \"description\": \"Replaced description\"}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send PUT /api/part/<partId>/ with fullUpdatePayload (omitting boolean flags)",
+        "expectedResult": "HTTP 200 OK returned with updated name and description, and omitted flags purchaseable and saleable defaulted to false"
+      }
+    ],
+    "postConditions": [
+      "Full object replacement conforms to REST PUT semantics"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-016",
+    "scenarioId": "SCN-INVENTREE-016",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-010",
+    "title": "API - PATCH /api/part/{id}/ partial delta update and inactive state toggle",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Part exists with active=true, description='Original description'"
+    ],
+    "testDataRequirements": {
+      "patchPayload": "{\"active\": false}",
+      "emptyPayload": "{}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send PATCH /api/part/<partId>/ with patchPayload",
+        "expectedResult": "HTTP 200 OK returned with active=false, while name, category, and description remain intact"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send PATCH /api/part/<partId>/ with emptyPayload ({})",
+        "expectedResult": "HTTP 200 OK returned with no modifications (valid no-op)"
+      },
+      {
+        "stepIndex": 3,
+        "action": "Send GET /api/part/<partId>/ to verify inactive part readability",
+        "expectedResult": "HTTP 200 OK returned confirming part remains readable even when inactive"
+      }
+    ],
+    "postConditions": [
+      "Part is marked inactive but accessible"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-017",
+    "scenarioId": "SCN-INVENTREE-017",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-011",
+    "title": "DB - DELETE /api/part/{id}/ blocked when part has active stock items",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "Part exists and has 1 or more associated stock items in inventory"
+    ],
+    "testDataRequirements": {
+      "stockLockedPartId": "<stockPartId>"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send DELETE /api/part/<stockPartId>/ with auth header",
+        "expectedResult": "HTTP 400 Bad Request returned preventing deletion of part with active stock items"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send GET /api/part/<stockPartId>/",
+        "expectedResult": "HTTP 200 OK confirms part remains in database"
+      }
+    ],
+    "postConditions": [
+      "Inventory referential integrity preserved"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-018",
+    "scenarioId": "SCN-INVENTREE-018",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-011",
+    "title": "API - DELETE /api/part/{id}/ succeeds for clean unreferenced part",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "Part exists with zero stock items, zero BOM entries, and zero purchase orders"
+    ],
+    "testDataRequirements": {
+      "cleanPartId": "<cleanPartId>"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send DELETE /api/part/<cleanPartId>/ with auth header",
+        "expectedResult": "HTTP 204 No Content returned"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send GET /api/part/<cleanPartId>/",
+        "expectedResult": "HTTP 404 Not Found confirms part is removed"
+      }
+    ],
+    "postConditions": [
+      "Part record permanently deleted"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-019",
+    "scenarioId": "SCN-INVENTREE-019",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-012",
+    "title": "API - GET /api/part/ multi-facet filter conjunction (category + active + search)",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "Database populated with diverse parts across multiple categories with active and inactive statuses"
+    ],
+    "testDataRequirements": {
+      "conjunctionQuery": "category=1&active=true&search=Capacitor"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/?category=1&active=true&search=Capacitor and measure duration",
+        "expectedResult": "HTTP 200 OK returned within 3,000ms SLA, where every result matches category=1, active=true, and name/IPN containing 'Capacitor'"
+      }
+    ],
+    "postConditions": [
+      "Logical AND conjunction verified"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-020",
+    "scenarioId": "SCN-INVENTREE-020",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-012",
+    "title": "API - GET /api/part/ search with zero matches returns HTTP 200 and empty results",
+    "type": "FUNCTIONAL",
+    "priority": "P2",
+    "preconditions": [
+      "InvenTree instance is running"
+    ],
+    "testDataRequirements": {
+      "unmatchedQuery": "search=TOTALLY_NON_EXISTENT_SEARCH_STRING_XYZ_999"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send GET /api/part/?search=TOTALLY_NON_EXISTENT_SEARCH_STRING_XYZ_999",
+        "expectedResult": "HTTP 200 OK returned with count=0 and results=[] (not HTTP 404)"
+      }
+    ],
+    "postConditions": [
+      "Zero results contract preserved"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-021",
+    "scenarioId": "SCN-INVENTREE-021",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-013",
+    "title": "API - Mutating write endpoints reject requests without Authorization token",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "InvenTree instance is operational"
+    ],
+    "testDataRequirements": {
+      "validCategoryPayload": "{\"name\": \"Unauthorized Category\"}"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send POST /api/part/category/ with validCategoryPayload but NO Authorization header",
+        "expectedResult": "HTTP 401 Unauthorized or HTTP 403 Forbidden returned rejecting unauthenticated write mutation"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Send DELETE /api/part/1/ with NO Authorization header",
+        "expectedResult": "HTTP 401 Unauthorized or HTTP 403 Forbidden returned"
+      }
+    ],
+    "postConditions": [
+      "No database mutations occur without authentication"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-022",
+    "scenarioId": "SCN-INVENTREE-022",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-013",
+    "title": "API - Mutating endpoints reject invalid or malformed tokens",
+    "type": "FUNCTIONAL",
+    "priority": "P0",
+    "preconditions": [
+      "InvenTree instance is operational"
+    ],
+    "testDataRequirements": {
+      "invalidHeader": "Token invalid_token_abc_123_xyz"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Send POST /api/part/ with valid part payload and 'Authorization: Token invalid_token_abc_123_xyz'",
+        "expectedResult": "HTTP 401 Unauthorized returned indicating 'Invalid token'"
+      }
+    ],
+    "postConditions": [
+      "Security audit trail records unauthorized attempt without exposing secret"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-023",
+    "scenarioId": "SCN-INVENTREE-023",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-002",
+    "title": "UI - Category Tree View interactive navigation and part list filtering",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "User is authenticated in web browser",
+      "Category tree contains root category with child categories and assigned parts"
+    ],
+    "testDataRequirements": {
+      "targetUrl": "/part/"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Navigate to /part/ and locate the left-hand Category Tree panel",
+        "expectedResult": "Category tree renders root nodes with expand/collapse icons"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Click the expansion chevron on root category 'Electronics'",
+        "expectedResult": "Child category 'Passives' expands into view"
+      },
+      {
+        "stepIndex": 3,
+        "action": "Click on child category 'Passives'",
+        "expectedResult": "Parts list table updates to show only parts belonging to 'Passives', and breadcrumb updates"
+      }
+    ],
+    "postConditions": [
+      "UI table and active category state remain synchronized"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  },
+  {
+    "id": "TC-INVENTREE-024",
+    "scenarioId": "SCN-INVENTREE-024",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "acceptanceCriteriaId": "AC-INVENTREE-006",
+    "title": "UI - Create Part modal end-to-end user journey with client validation",
+    "type": "FUNCTIONAL",
+    "priority": "P1",
+    "preconditions": [
+      "User is logged into InvenTree web frontend with part creation permissions"
+    ],
+    "testDataRequirements": {
+      "partName": "E2E Automated Resistor",
+      "categoryName": "Passives"
+    },
+    "steps": [
+      {
+        "stepIndex": 1,
+        "action": "Navigate to /part/ and click the 'Create Part' button",
+        "expectedResult": "Create Part modal opens with empty name and category selector"
+      },
+      {
+        "stepIndex": 2,
+        "action": "Click 'Submit' without filling required fields",
+        "expectedResult": "Client-side validation highlights 'Name' and 'Category' fields with error messages, preventing submission"
+      },
+      {
+        "stepIndex": 3,
+        "action": "Enter partName 'E2E Automated Resistor', select 'Passives' from category dropdown, and click 'Submit'",
+        "expectedResult": "Success toast notification is displayed, modal closes, and browser redirects to the new part detail page (/part/{id}/)"
+      }
+    ],
+    "postConditions": [
+      "New part appears in parts list and detail page loads with accurate information"
+    ],
+    "status": "APPROVED",
+    "createdAt": "2026-10-04T00:00:00.000Z"
+  }
+]

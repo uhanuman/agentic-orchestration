@@ -1,0 +1,158 @@
+{
+  "agentId": "AGT-ACCESSIBILITY-001",
+  "requirementId": "REQ-INVENTREE-PART-001",
+  "testCases": [
+    {
+      "id": "TC-INVENTREE-A11Y-001",
+      "scenarioId": "SCN-INVENTREE-023",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-002",
+      "title": "A11Y - WCAG 2.1 AA Keyboard Navigation & Focus Hierarchy in Category Tree View",
+      "type": "ACCESSIBILITY",
+      "priority": "P1",
+      "preconditions": [
+        "InvenTree web frontend running in Chromium via Playwright",
+        "Category tree loaded with root and multi-level child categories"
+      ],
+      "testDataRequirements": {
+        "wcagCriteria": ["2.1.1 Keyboard", "2.1.2 No Keyboard Trap", "2.4.7 Focus Visible"]
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Navigate to Part Management view and press Tab until focus reaches the Category Tree container",
+          "expectedResult": "Focus lands on first tree node with a visible, high-contrast focus indicator (contrast ratio >= 3:1)"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Use Arrow Down and Arrow Up keys to navigate between sibling category nodes",
+          "expectedResult": "Focus moves sequentially without requiring mouse interaction; active descendant or roving tabindex is maintained"
+        },
+        {
+          "stepIndex": 3,
+          "action": "Press Arrow Right on a collapsed parent node, then Arrow Left on an expanded node",
+          "expectedResult": "Arrow Right expands child categories; Arrow Left collapses them; aria-expanded reflects boolean state ('true'/'false')"
+        },
+        {
+          "stepIndex": 4,
+          "action": "Press Enter or Space on a selected node",
+          "expectedResult": "Category is selected; parts list updates to show category parts; zero keyboard traps encountered"
+        }
+      ],
+      "postConditions": [
+        "Tree view is 100% navigable via keyboard alone without relying on pointer devices"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-A11Y-002",
+      "scenarioId": "SCN-INVENTREE-024",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-006",
+      "title": "A11Y - WCAG 2.1 AA Dialog Focus Trap, Escape Key & ARIA Modality in Create Part Modal",
+      "type": "ACCESSIBILITY",
+      "priority": "P1",
+      "preconditions": [
+        "Web frontend operational in Playwright browser context",
+        "User opens 'Create Part' modal dialog"
+      ],
+      "testDataRequirements": {
+        "wcagCriteria": ["1.3.1 Info and Relationships", "2.1.2 No Keyboard Trap", "2.4.3 Focus Order"]
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Trigger 'Add Part' button in UI via keyboard Enter key",
+          "expectedResult": "Modal opens; focus automatically shifts to the first interactive field (Part Name input) or the modal container"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Assert modal DOM attributes and ARIA roles",
+          "expectedResult": "Modal element contains role='dialog', aria-modal='true', and an accessible name via aria-labelledby or aria-label"
+        },
+        {
+          "stepIndex": 3,
+          "action": "Tab through all form fields to the final element (Cancel button) and press Tab once more",
+          "expectedResult": "Focus wraps around to the first focusable element inside the modal; background page content is inert and unreachable"
+        },
+        {
+          "stepIndex": 4,
+          "action": "Press the Escape key",
+          "expectedResult": "Modal closes cleanly; focus is restored back to the original 'Add Part' trigger button"
+        }
+      ],
+      "postConditions": [
+        "Dialog maintains strict focus containment and predictable restoration upon exit"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-A11Y-003",
+      "scenarioId": "SCN-INVENTREE-024",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-006",
+      "title": "A11Y - Automated Axe-Core Full Page Accessibility Sweep on Part Views",
+      "type": "ACCESSIBILITY",
+      "priority": "P1",
+      "preconditions": [
+        "@axe-core/playwright test integration initialized in test harness",
+        "Part Index and Create Part pages rendered"
+      ],
+      "testDataRequirements": {
+        "standards": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Execute AxeBuilder audit on the Part Management catalogue view with category sidebar expanded",
+          "expectedResult": "Zero violations with impact 'critical' or 'serious'; color contrast ratio >= 4.5:1 for standard text"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Execute AxeBuilder audit on the open 'Create Part' modal dialog",
+          "expectedResult": "Zero form label violations (all inputs have associated <label> elements or aria-label); zero missing landmark warnings"
+        }
+      ],
+      "postConditions": [
+        "Axe audit report passes with 100% compliance on automated WCAG 2.1 Level AA rules"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-A11Y-004",
+      "scenarioId": "SCN-INVENTREE-024",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-006",
+      "title": "A11Y - Screen Reader Error Announcements & Live Regions on Validation Failures",
+      "type": "ACCESSIBILITY",
+      "priority": "P2",
+      "preconditions": [
+        "Create Part modal open in browser",
+        "Form validation triggered with blank mandatory name field"
+      ],
+      "testDataRequirements": {
+        "wcagCriteria": ["3.3.1 Error Identification", "4.1.3 Status Messages"]
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Submit 'Create Part' form with empty required fields",
+          "expectedResult": "Form validation triggers; invalid input element marked with aria-invalid='true' and linked to error text via aria-describedby"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Inspect dynamic error summary or alert notification banner in the DOM",
+          "expectedResult": "Error message container has role='alert' or aria-live='assertive', allowing assistive technologies to announce the failure immediately"
+        }
+      ],
+      "postConditions": [
+        "Assistive technology users receive clear, real-time auditory notifications of submission errors"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    }
+  ]
+}

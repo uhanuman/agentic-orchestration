@@ -24,6 +24,8 @@ async function main() {
       options.epicId = arg.split('=')[1];
     } else if (arg.startsWith('--feature=')) {
       options.featureName = arg.split('=')[1];
+    } else if (arg.startsWith('--slug=')) {
+      options.featureSlug = arg.split('=')[1];
     } else if (arg.startsWith('--domain=')) {
       options.domain = arg.split('=')[1];
     } else if (arg.startsWith('--release=')) {

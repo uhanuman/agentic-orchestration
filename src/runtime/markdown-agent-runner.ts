@@ -62,6 +62,8 @@ export class MarkdownAgentRunner {
   public readonly temperature: number;
   public readonly declaredInputArtifacts: string[];
   public readonly declaredOutputArtifacts: string[];
+  public readonly declaredInputPaths: string[];
+  public readonly declaredOutputPaths: string[];
   public readonly evaluatorIds: string[];
   public readonly gateIds: string[];
   public readonly nextAgents: string[];
@@ -80,6 +82,8 @@ export class MarkdownAgentRunner {
 
     this.declaredInputArtifacts = this.spec.getList('inputArtifacts');
     this.declaredOutputArtifacts = this.spec.getList('outputArtifacts');
+    this.declaredInputPaths = this.spec.getList('inputPaths');
+    this.declaredOutputPaths = this.spec.getList('outputPaths');
     this.evaluatorIds = this.spec.getList('evaluatorIds');
     this.gateIds = this.spec.getList('gateIds').length > 0
       ? this.spec.getList('gateIds')

@@ -1,0 +1,330 @@
+[
+  {
+    "id": "AC-INVENTREE-001",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "User holds a valid API token with category creation permissions in header 'Authorization: Token <token>'",
+      "InvenTree database is operational with or without existing categories"
+    ],
+    "when": "User submits POST /api/part/category/ with a valid name (1-100 characters) and optional parent ID, or submits via the UI 'Add Category' panel",
+    "then": [
+      "System creates the category and returns HTTP 201 Created with the full category object including system-assigned integer ID",
+      "When parent ID is omitted or null, category is created as a root-level category with parent: null",
+      "When valid parent ID is provided, category is nested under that parent and pathstring reflects the parent lineage",
+      "Duplicate category names within the same parent scope are rejected with HTTP 400 Bad Request",
+      "UI category tree view renders the newly created category in the appropriate node position and displays a success notification"
+    ],
+    "businessRules": [
+      "Category name is required and non-empty (max 100 characters)",
+      "Category names must be unique within the same parent category scope",
+      "Write access requires a valid API token in the Authorization header"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via automated REST API POST requests asserting 201 and 400 responses, and Playwright UI tests creating root and nested categories.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-002",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "InvenTree database is populated with multiple root and child categories"
+    ],
+    "when": "Client sends GET /api/part/category/ with optional query parameters 'parent=<id>', 'parent=null', or 'ordering=name', or navigates the UI Parts section",
+    "then": [
+      "API returns HTTP 200 OK with a JSON list/envelope containing at minimum id, name, description, and parent_id for each category",
+      "Query with parent=<id> returns only direct child categories of that specific category",
+      "Query with parent=null returns only root-level categories",
+      "List endpoint supports sorting by category name in ascending or descending order",
+      "UI renders expandable/collapsible tree nodes, and clicking a category node filters the parts list to that category"
+    ],
+    "businessRules": [
+      "Response payload must provide hierarchical linkage (parent_id or parent)",
+      "Unfiltered category list retrieval must respond deterministically"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API GET query parameter matrix testing and Playwright UI tree node expand/collapse and filter verification.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-003",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "A Part Category exists with known integer ID, metadata, parent category, and assigned parts"
+    ],
+    "when": "Client dispatches GET /api/part/category/{id}/ or selects the category in the Category Tree view",
+    "then": [
+      "Request with a valid numeric ID returns HTTP 200 OK with the full category object including id, name, description, parent, pathstring, and part_count",
+      "Response pathstring contains the complete breadcrumb path from root to current category",
+      "Response part_count accurately equals the count of parts assigned to this category",
+      "Request with an invalid, non-numeric, or non-existent category ID returns HTTP 404 Not Found",
+      "UI category detail panel renders the category name, breadcrumb lineage, description, and part count"
+    ],
+    "businessRules": [
+      "A valid numeric category ID must return HTTP 200; invalid IDs must return HTTP 404",
+      "Part count reflects real-time assigned parts"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via REST API GET status and schema assertions for 200 and 404 paths, and Playwright inspection of the detail panel.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-004",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "An existing Part Category exists with ID {id} and user provides a valid write token"
+    ],
+    "when": "Client sends PUT /api/part/category/{id}/ with updated attributes (name, parent, description) or modifies the category via the UI 'Edit' action",
+    "then": [
+      "Valid payload returns HTTP 200 OK with the fully updated category object",
+      "Renaming a category propagates updated pathstrings to all descendant categories",
+      "Attempting to set the parent to a descendant category (circular hierarchy) is rejected with HTTP 400 Bad Request",
+      "Omitting the required 'name' field in a PUT body is rejected with HTTP 400 Bad Request",
+      "UI category tree view immediately updates the category label and hierarchical position, displaying a success notification"
+    ],
+    "businessRules": [
+      "The name field is mandatory in PUT requests; missing name yields HTTP 400",
+      "Circular parent-child hierarchies are strictly forbidden to maintain tree acyclicity",
+      "Write operations require valid authentication credentials"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API PUT requests testing valid renaming, missing fields, circular parent references, and Playwright UI edit interactions.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-005",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "An existing Part Category exists with ID {id} and user holds a valid write token"
+    ],
+    "when": "Client dispatches DELETE /api/part/category/{id}/ or triggers category deletion via the UI action menu",
+    "then": [
+      "Deleting an empty category (no assigned parts and no children) succeeds and returns HTTP 204 No Content",
+      "Deleting a category with assigned parts is rejected with HTTP 400 Bad Request unless parts are reassigned or deleted first",
+      "Deleting a category with child categories without cascade authorization is rejected with HTTP 400 Bad Request",
+      "Requests without a valid API token return HTTP 401 Unauthorized or HTTP 403 Forbidden",
+      "UI displays a confirmation dialog before deletion; upon confirmation, category is removed from the tree and success toast appears"
+    ],
+    "businessRules": [
+      "Categories with assigned parts cannot be deleted; referential integrity prevents orphaned parts",
+      "Successful deletion returns HTTP 204 No Content",
+      "Write access requires a valid API token"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API DELETE requests on empty vs populated categories, asserting HTTP 204 and HTTP 400, and Playwright UI confirmation flow.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-006",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "A valid Part Category exists in InvenTree and user possesses a valid write token"
+    ],
+    "when": "Client sends POST /api/part/ with part details (name, category, optional IPN, description, flags) or submits the UI 'Create Part' modal",
+    "then": [
+      "Valid payload creates the part and returns HTTP 201 Created with the complete part representation including system-assigned integer ID",
+      "New part defaults to active=true if active flag is omitted from creation payload",
+      "Payload missing mandatory 'name' or 'category' is rejected with HTTP 400 Bad Request and field-level validation errors",
+      "Payload specifying a non-existent category ID is rejected with HTTP 400 Bad Request",
+      "Payload with duplicate IPN already in use is rejected with HTTP 400 Bad Request",
+      "UI parts list reflects the new part and navigates or links to the new part detail page (/part/{id}/)"
+    ],
+    "businessRules": [
+      "Part name is required, non-empty, and max 100 characters",
+      "Category is required and must reference an existing category foreign key",
+      "IPN (Internal Part Number), if provided, must be globally unique across all parts",
+      "Write access requires a valid API token"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable through API contract tests validating 201 Created, missing mandatory fields, duplicate IPN rejection, and Playwright form submission.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-007",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "Catalogue is populated with parts across multiple categories with active and inactive statuses"
+    ],
+    "when": "Client sends GET /api/part/ with optional pagination query parameters 'limit' and 'offset', or loads /part/ in the web browser",
+    "then": [
+      "API returns HTTP 200 OK with a paginated envelope containing count, next URL, previous URL, and results array",
+      "Each part object in results includes id, name, description, category (id + name), IPN, active flag, and thumbnail URL",
+      "Unfiltered list request returns response within 2,000 ms under standard load (< 50 concurrent users, < 10,000 parts)",
+      "Negative limit or offset values return HTTP 400 Bad Request",
+      "UI renders parts table with pagination controls matching the API count, next, and previous links"
+    ],
+    "businessRules": [
+      "Response must provide standardized pagination metadata (count, next, previous, results)",
+      "Performance SLA requires response time <= 2,000 ms for unfiltered catalogue list"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API envelope schema checks, pagination boundary tests, k6 response time benchmarks, and Playwright table pagination checks.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-008",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "A Part entity exists with ID {id} containing metadata, category, IPN, flags, and stock relations"
+    ],
+    "when": "Client sends GET /api/part/{id}/ or navigates to /part/{id}/ in the web UI",
+    "then": [
+      "Valid numeric part ID returns HTTP 200 OK with all fields: id, name, description, category, IPN, active, purchaseable, saleable, trackable, virtual, units, minimum_stock, and image thumbnail URL",
+      "Non-existent or non-numeric part ID returns HTTP 404 Not Found",
+      "UI Part detail page displays all part fields, category link, active badge, and renders tabs for Details, Stock levels, BOM, and Suppliers"
+    ],
+    "businessRules": [
+      "Valid numeric part ID returns HTTP 200; invalid/non-existent returns HTTP 404",
+      "Complete entity representation must be returned in detail view"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable through automated REST GET contract tests and Playwright UI tests validating tab rendering on /part/{id}/.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-009",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "An existing Part exists with ID {id} and user supplies a valid write token"
+    ],
+    "when": "Client sends PUT /api/part/{id}/ with full part payload or submits the UI 'Edit Part' form",
+    "then": [
+      "Valid complete payload updates all part attributes and returns HTTP 200 OK with the updated part representation",
+      "Omitting mandatory 'name' or 'category' field in PUT body returns HTTP 400 Bad Request",
+      "Supplying a non-existent category ID returns HTTP 400 Bad Request",
+      "Updating IPN to a value already used by another part returns HTTP 400 Bad Request",
+      "Boolean flags (active, purchaseable, saleable, trackable, virtual) default to false when omitted from PUT body",
+      "UI part detail page immediately reflects updated values and displays a success notification"
+    ],
+    "businessRules": [
+      "PUT represents a full resource replacement; all required fields must be supplied",
+      "IPN must remain globally unique across all parts",
+      "Write access requires a valid API token"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API PUT full-replacement assertions, duplicate IPN error paths, and Playwright edit modal validation.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-010",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "An existing Part exists with ID {id} and user supplies a valid write token"
+    ],
+    "when": "Client sends PATCH /api/part/{id}/ with a subset of fields (e.g. toggling active=false or changing description) or uses inline edit affordance in UI",
+    "then": [
+      "System updates only the supplied fields and returns HTTP 200 OK with the complete updated part representation",
+      "Unsupplied fields retain their current values without modification",
+      "An empty request body ({}) returns HTTP 200 OK with the unchanged part object (no-op)",
+      "When active is set to false, part remains accessible via GET but is marked as inactive",
+      "If IPN is included in PATCH body, duplicate value check is enforced, rejecting collisions with HTTP 400 Bad Request",
+      "UI updates only the modified attribute and displays a success notification"
+    ],
+    "businessRules": [
+      "PATCH performs partial update; omitted fields must not be overwritten or defaulted",
+      "PATCH with empty payload is a valid no-op returning HTTP 200",
+      "Write access requires a valid API token"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API PATCH partial payload tests, empty body tests, active flag toggle verification, and Playwright UI tests.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-011",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "An existing Part exists with ID {id} and user holds a valid write token"
+    ],
+    "when": "Client sends DELETE /api/part/{id}/ or selects 'Delete Part' from the UI action menu and confirms",
+    "then": [
+      "Deleting an unreferenced part with zero stock items and no BOM relations returns HTTP 204 No Content",
+      "Attempting to delete a part with existing stock items is rejected with HTTP 400 Bad Request and descriptive error message",
+      "Attempting to delete a part referenced as a BOM item in another assembly is rejected with HTTP 400 Bad Request",
+      "Requests without a valid API token return HTTP 401 Unauthorized or HTTP 403 Forbidden",
+      "UI presents a confirmation dialog before deletion; upon confirmation, user is redirected to /part/ list and toast is shown"
+    ],
+    "businessRules": [
+      "Parts with active stock items or BOM references cannot be deleted to prevent referential corruption",
+      "Successful deletion returns HTTP 204 No Content",
+      "Write access requires a valid API token"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API DELETE assertions across unlocked parts, stock-locked parts, and BOM-locked parts, and Playwright UI confirmation tests.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-012",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "InvenTree catalogue contains parts across multiple categories with distinct active flags, names, and IPNs"
+    ],
+    "when": "Client queries GET /api/part/ with combinations of 'category=<id>', 'active=true|false', and 'search=<keyword>', or uses UI filter controls",
+    "then": [
+      "Query with category=<id> returns only parts directly assigned to that category",
+      "Query with active=true returns only active parts; active=false returns only inactive parts",
+      "Query with search=<keyword> performs case-insensitive substring search matching name and IPN",
+      "Combining category, active, and search parameters applies logical AND conjunction (intersection of filters)",
+      "Queries with zero matching records return HTTP 200 OK with empty results array (not HTTP 404)",
+      "Filtered query responds within 3,000 ms under standard load (< 50 concurrent users, < 10,000 parts)",
+      "UI /part/ list table dynamically filters records according to applied filter facets with debounced updates"
+    ],
+    "businessRules": [
+      "Multiple filters must be evaluated with logical AND conjunction",
+      "Zero-match queries must return HTTP 200 with results: []",
+      "Filtered query performance SLA is <= 3,000 ms"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable via API filter combination test matrices, zero-result assertions, k6 load latency tests, and Playwright interactive filter tests.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  },
+  {
+    "id": "AC-INVENTREE-013",
+    "requirementId": "REQ-INVENTREE-PART-001",
+    "version": 1,
+    "given": [
+      "InvenTree API endpoints for Part and Part Category write and read operations"
+    ],
+    "when": "Client dispatches requests with missing, malformed, expired, unprivileged, or valid authentication tokens",
+    "then": [
+      "Mutating requests (POST, PUT, PATCH, DELETE) without Authorization header return HTTP 403 Forbidden or HTTP 401 Unauthorized",
+      "Mutating requests with an invalid or expired token return HTTP 401 Unauthorized with descriptive error details",
+      "Requests with a valid token belonging to a user without write permissions return HTTP 403 Forbidden",
+      "Requests with a valid token supplied in 'Authorization: Token <token>' format succeed with appropriate 2xx response",
+      "Tokens never appear in URL query strings, server access logs, or error responses",
+      "UI redirects unauthenticated users attempting to access /part/ to the login page"
+    ],
+    "businessRules": [
+      "All mutating API endpoints must enforce token authentication without exception",
+      "Authorization header format must adhere to 'Authorization: Token <token>'",
+      "Session cookies must not be accepted for programmatic API write operations",
+      "Token secrets must be protected from leakage across logs and error messages"
+    ],
+    "isTestable": true,
+    "testabilityRationale": "Verifiable through automated security API test suite evaluating valid, missing, malformed, and unprivileged tokens across all write endpoints.",
+    "status": "VALIDATED",
+    "createdAt": "2026-10-03T23:21:14.000Z"
+  }
+]

@@ -28,11 +28,13 @@ import {
 } from '../runtime';
 import { TelemetryBus, WorkflowTelemetrySummary } from './telemetry-bus';
 import { HITLGovernanceProtocol } from './hitl-protocol';
+import { ManifestSync } from '../core/manifest-sync';
 
 export interface PipelineInput {
   rawText: string;
   epicId: string;
   featureName: string;
+  featureSlug?: string;
   domain: string;
   priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   releaseVersion?: string;
@@ -94,6 +96,16 @@ export class DAGEngine {
     let automationBlueprints: AutomationBlueprintArtifact[] = [];
     let validationReport: any;
     let releaseRecord: ReleaseGateRecord | undefined;
+
+    const featureSlug = input.featureSlug || (input.featureName ? input.featureName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : undefined);
+    let manifestSync: ManifestSync | null = null;
+    if (featureSlug) {
+      manifestSync = new ManifestSync(featureSlug, {
+        featureName: input.featureName,
+        epicId: input.epicId,
+        featureSlug,
+      });
+    }
 
     try {
       // ==========================================
@@ -164,6 +176,26 @@ ${input.rawText}
         throw new Error(`Pipeline halted at GATE-REQ-001: ${JSON.stringify(reqGateRes.failingEvaluators)}`);
       }
 
+      if (manifestSync) {
+        manifestSync.updateStage(
+          '01.requirement-analysis',
+          {
+            status: 'COMPLETED',
+            gate: 'GATE-REQ-001',
+            gateScore: reqGateRes.score,
+            evaluators: Object.fromEntries(reqGateRes.evaluatorResults.map(e => [e.evaluatorId, { score: e.score, status: e.passed ? 'PASSED' : 'FAILED' }])),
+            completedAt: new Date().toISOString(),
+          },
+          '02.test-design',
+          { agent: 'agents/02.test-design.agent.md', inputsRequired: [requirement.id, ...acceptanceCriteria.map(a => a.id)] }
+        );
+        manifestSync.registerArtifacts({
+          requirement: requirement.id,
+          acceptanceCriteria: acceptanceCriteria.map(a => a.id),
+        });
+        manifestSync.save();
+      }
+
       // ==========================================
       // STAGE 3: Markdown Agent: 02.test-design.agent.md
       // ==========================================
@@ -230,6 +262,26 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
         throw new Error(`Pipeline halted at GATE-TEST-DESIGN-001: ${JSON.stringify(desGateRes.failingEvaluators)}`);
       }
 
+      if (manifestSync) {
+        manifestSync.updateStage(
+          '02.test-design',
+          {
+            status: 'COMPLETED',
+            gate: 'GATE-TEST-DESIGN-001',
+            gateScore: desGateRes.score,
+            evaluators: Object.fromEntries(desGateRes.evaluatorResults.map(e => [e.evaluatorId, { score: e.score, status: e.passed ? 'PASSED' : 'FAILED' }])),
+            completedAt: new Date().toISOString(),
+          },
+          '03.nfr-workforce',
+          { agent: 'agents/03.security-nfr.agent.md', inputsRequired: [requirement.id, ...scenarios.map(s => s.id)] }
+        );
+        manifestSync.registerArtifacts({
+          scenarios: scenarios.map(s => s.id),
+          functionalTestCases: testCases.map(t => t.id),
+        });
+        manifestSync.save();
+      }
+
       // ==========================================
       // STAGE 5: Markdown NFR Agents (03.security-nfr.agent.md, 04.performance-nfr.agent.md, 05.accessibility-nfr.agent.md)
       // ==========================================
@@ -279,9 +331,30 @@ ${acceptanceCriteria.map(a => `[${a.id}] Given: ${a.given.join('; ')} | When: ${
         await this.contextStore.saveArtifact('TC', tc);
         testCases.push(tc);
       }
-      this.telemetryBus.recordAgentLog(a11yRes.log);
-
       logStage('NFR Specialist Workforce', 'agents/03.security-nfr.agent.md', 'COMPLETED', Date.now() - t0, `Added Sec, Perf, and A11y test cases (Total: ${testCases.length} TCs)`);
+
+      if (manifestSync) {
+        const nfrIds = [
+          ...secRes.output.testCases.map(t => t.id),
+          ...perfRes.output.testCases.map(t => t.id),
+          ...a11yRes.output.testCases.map(t => t.id),
+        ];
+        manifestSync.updateStage(
+          '03.nfr-workforce',
+          {
+            status: 'COMPLETED',
+            gate: 'GATE-SEC-001 / GATE-PERF-001 / GATE-A11Y-001',
+            gateScore: 1.0,
+            completedAt: new Date().toISOString(),
+          },
+          '04.sdet-blueprint',
+          { agent: 'agents/06.sdet-blueprint.agent.md', inputsRequired: testCases.map(t => t.id) }
+        );
+        manifestSync.registerArtifacts({
+          nfrTestCases: nfrIds,
+        });
+        manifestSync.save();
+      }
 
       // ==========================================
       // STAGE 6: Markdown SDET Agent: 06.sdet-blueprint.agent.md

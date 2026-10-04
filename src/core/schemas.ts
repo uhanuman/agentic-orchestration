@@ -15,7 +15,7 @@ export const RiskAssessmentSchema = z.object({
 });
 
 export const RequirementArtifactSchema = z.object({
-  id: z.string().regex(/^REQ-\d+$/, 'id must match REQ-XXXX pattern'),
+  id: z.string().regex(/^REQ-[A-Za-z0-9_-]+$/, 'id must match REQ-XXXX pattern'),
   version: z.number().int().positive(),
   epicId: z.string().min(1, 'epicId is required'),
   featureName: z.string().min(1, 'featureName is required'),
@@ -35,8 +35,8 @@ export const RequirementArtifactSchema = z.object({
 // 2. ACCEPTANCE CRITERIA ARTIFACT SCHEMA (AC)
 // ==========================================
 export const AcceptanceCriteriaArtifactSchema = z.object({
-  id: z.string().regex(/^AC-\d+$/, 'id must match AC-XXXX pattern'),
-  requirementId: z.string().regex(/^REQ-\d+$/, 'requirementId must match REQ-XXXX pattern'),
+  id: z.string().regex(/^AC-[A-Za-z0-9_-]+$/, 'id must match AC-XXXX pattern'),
+  requirementId: z.string().regex(/^REQ-[A-Za-z0-9_-]+$/, 'requirementId must match REQ-XXXX pattern'),
   version: z.number().int().positive(),
   given: z.array(z.string()).min(1, 'at least one given precondition is required'),
   when: z.string().min(1, 'when trigger is required'),
@@ -52,9 +52,9 @@ export const AcceptanceCriteriaArtifactSchema = z.object({
 // 3. TEST SCENARIO ARTIFACT SCHEMA (SCN)
 // ==========================================
 export const ScenarioArtifactSchema = z.object({
-  id: z.string().regex(/^SCN-\d+$/, 'id must match SCN-XXXX pattern'),
-  requirementId: z.string().regex(/^REQ-\d+$/, 'requirementId must match REQ-XXXX pattern'),
-  acceptanceCriteriaId: z.string().regex(/^AC-\d+$/, 'acceptanceCriteriaId must match AC-XXXX pattern'),
+  id: z.string().regex(/^SCN-[A-Za-z0-9_-]+$/, 'id must match SCN-XXXX pattern'),
+  requirementId: z.string().regex(/^REQ-[A-Za-z0-9_-]+$/, 'requirementId must match REQ-XXXX pattern'),
+  acceptanceCriteriaId: z.string().regex(/^AC-[A-Za-z0-9_-]+$/, 'acceptanceCriteriaId must match AC-XXXX pattern'),
   title: z.string().min(1, 'title is required'),
   classification: z.enum(['POSITIVE', 'NEGATIVE', 'BOUNDARY', 'EXCEPTION', 'INTEGRATION', 'E2E']),
   targetLayer: z.enum(['UI', 'API', 'DATABASE', 'MESSAGING']),
@@ -75,10 +75,10 @@ export const TestStepSchema = z.object({
 });
 
 export const TestCaseArtifactSchema = z.object({
-  id: z.string().regex(/^TC-\d+$/, 'id must match TC-XXXX pattern'),
-  scenarioId: z.string().regex(/^SCN-\d+$/, 'scenarioId must match SCN-XXXX pattern'),
-  requirementId: z.string().regex(/^REQ-\d+$/, 'requirementId must match REQ-XXXX pattern'),
-  acceptanceCriteriaId: z.string().regex(/^AC-\d+$/, 'acceptanceCriteriaId must match AC-XXXX pattern'),
+  id: z.string().regex(/^TC-[A-Za-z0-9_-]+$/, 'id must match TC-XXXX pattern'),
+  scenarioId: z.string().regex(/^SCN-[A-Za-z0-9_-]+$/, 'scenarioId must match SCN-XXXX pattern'),
+  requirementId: z.string().regex(/^REQ-[A-Za-z0-9_-]+$/, 'requirementId must match REQ-XXXX pattern'),
+  acceptanceCriteriaId: z.string().regex(/^AC-[A-Za-z0-9_-]+$/, 'acceptanceCriteriaId must match AC-XXXX pattern'),
   title: z.string().min(1, 'title is required'),
   type: z.enum(['FUNCTIONAL', 'SECURITY', 'PERFORMANCE', 'ACCESSIBILITY', 'RESILIENCE']),
   priority: z.enum(['P0', 'P1', 'P2', 'P3']),
@@ -94,8 +94,8 @@ export const TestCaseArtifactSchema = z.object({
 // 5. AUTOMATION CONTRACT ARTIFACT SCHEMA (AUT)
 // ==========================================
 export const AutomationBlueprintArtifactSchema = z.object({
-  id: z.string().regex(/^AUT-\d+$/, 'id must match AUT-XXXX pattern'),
-  testCaseId: z.string().regex(/^TC-\d+$/, 'testCaseId must match TC-XXXX pattern'),
+  id: z.string().regex(/^AUT-[A-Za-z0-9_-]+$/, 'id must match AUT-XXXX pattern'),
+  testCaseId: z.string().regex(/^TC-[A-Za-z0-9_-]+$/, 'testCaseId must match TC-XXXX pattern'),
   automationFeasible: z.boolean(),
   cannotAutomateReason: z.string().optional(),
   recommendedHarness: z.enum(['PLAYWRIGHT_TS', 'REST_API', 'K6_PERF', 'AXE_A11Y', 'MANUAL']),
@@ -120,9 +120,9 @@ export const AutomationBlueprintArtifactSchema = z.object({
 // 6. TEST EXECUTION RECORD SCHEMA (TEX)
 // ==========================================
 export const TestExecutionRecordSchema = z.object({
-  id: z.string().regex(/^TEX-\d+$/, 'id must match TEX-XXXX pattern'),
-  testCaseId: z.string().regex(/^TC-\d+$/, 'testCaseId must match TC-XXXX pattern'),
-  automationId: z.string().regex(/^AUT-\d+$/).optional(),
+  id: z.string().regex(/^TEX-[A-Za-z0-9_-]+$/, 'id must match TEX-XXXX pattern'),
+  testCaseId: z.string().regex(/^TC-[A-Za-z0-9_-]+$/, 'testCaseId must match TC-XXXX pattern'),
+  automationId: z.string().regex(/^AUT-[A-Za-z0-9_-]+$/).optional(),
   environment: z.enum(['DEV', 'QA', 'STAGING', 'PROD']),
   buildNumber: z.string().min(1),
   releaseId: z.string().min(1),
@@ -138,7 +138,7 @@ export const TestExecutionRecordSchema = z.object({
 // 7. EXECUTION TREND & QUALITY SIGNAL SCHEMA (TRS)
 // ==========================================
 export const QualitySignalRecordSchema = z.object({
-  id: z.string().regex(/^TRS-\d+$/, 'id must match TRS-XXXX pattern'),
+  id: z.string().regex(/^TRS-[A-Za-z0-9_-]+$/, 'id must match TRS-XXXX pattern'),
   buildNumber: z.string().min(1),
   environment: z.string().min(1),
   totalExecuted: z.number().nonnegative(),
@@ -157,7 +157,7 @@ export const QualitySignalRecordSchema = z.object({
 // 8. RELEASE QUALITY GATE RECORD SCHEMA (REL)
 // ==========================================
 export const ReleaseGateRecordSchema = z.object({
-  id: z.string().regex(/^REL-\d+$/, 'id must match REL-XXXX pattern'),
+  id: z.string().regex(/^REL-[A-Za-z0-9_-]+$/, 'id must match REL-XXXX pattern'),
   releaseId: z.string().min(1),
   version: z.string().min(1),
   gateStatus: z.enum(['PASSED', 'FAILED', 'WAIVED_WITH_APPROVAL']),

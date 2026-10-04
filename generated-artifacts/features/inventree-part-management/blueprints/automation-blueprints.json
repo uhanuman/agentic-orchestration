@@ -1,0 +1,601 @@
+{
+  "blueprints": [
+    {
+      "id": "AUT-INVENTREE-001",
+      "testCaseId": "TC-INVENTREE-001",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-001: API - POST /api/part/category/ creates root and nested categories\", async ({ request, page }) => {\n  // Preconditions: InvenTree instance is running with test database initialized; Valid authentication token available with write permissions\n  // Step 1: Send POST request to /api/part/category/ with rootPayload and header 'Authorization: Token <token>'\n  // Expected: HTTP 201 Created returned with id, name='Mechanical Hardware', parent=null, and pathstring='Mechanical Hardware'\n  // Step 2: Send POST request to /api/part/category/ with childPayload referencing rootId and header 'Authorization: Token <token>'\n  // Expected: HTTP 201 Created returned with integer id, parent=<rootId>, and pathstring='Mechanical Hardware/Bolts & Screws'\n});",
+      "assertions": [
+        "HTTP 201 Created returned with id, name='Mechanical Hardware', parent=null, and pathstring='Mechanical Hardware'",
+        "HTTP 201 Created returned with integer id, parent=<rootId>, and pathstring='Mechanical Hardware/Bolts & Screws'"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-002",
+      "testCaseId": "TC-INVENTREE-002",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-002: API - POST /api/part/category/ validation constraints and duplicate name rejection\", async ({ request, page }) => {\n  // Preconditions: Root category 'Fasteners' already exists in the database; Valid authentication token available\n  // Step 1: Send POST to /api/part/category/ with emptyNamePayload\n  // Expected: HTTP 400 Bad Request returned with validation error on name field\n  // Step 2: Send POST to /api/part/category/ with longNamePayload\n  // Expected: HTTP 400 Bad Request returned indicating maximum 100 character constraint violation\n  // Step 3: Send POST to /api/part/category/ with duplicateNamePayload under root scope (parent: null)\n  // Expected: HTTP 400 Bad Request returned indicating category name must be unique within same parent scope\n});",
+      "assertions": [
+        "HTTP 400 Bad Request returned with validation error on name field",
+        "HTTP 400 Bad Request returned indicating maximum 100 character constraint violation",
+        "HTTP 400 Bad Request returned indicating category name must be unique within same parent scope"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-003",
+      "testCaseId": "TC-INVENTREE-003",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-003: API - GET /api/part/category/ hierarchy filtering and ordering\", async ({ request, page }) => {\n  // Preconditions: Database populated with 2 root categories ('Electronics', 'Mechanics') and 2 children under 'Electronics' ('Passives', 'Actives')\n  // Step 1: Send GET /api/part/category/?parent=null\n  // Expected: HTTP 200 OK returned containing only the 2 root categories ('Electronics', 'Mechanics')\n  // Step 2: Send GET /api/part/category/?parent=<electronicsId>\n  // Expected: HTTP 200 OK returned containing only direct child categories ('Passives', 'Actives')\n  // Step 3: Send GET /api/part/category/?ordering=name\n  // Expected: HTTP 200 OK returned with categories ordered alphabetically by name\n});",
+      "assertions": [
+        "HTTP 200 OK returned containing only the 2 root categories ('Electronics', 'Mechanics')",
+        "HTTP 200 OK returned containing only direct child categories ('Passives', 'Actives')",
+        "HTTP 200 OK returned with categories ordered alphabetically by name"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-004",
+      "testCaseId": "TC-INVENTREE-004",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-004: API - GET /api/part/category/{id}/ detail and pathstring verification\", async ({ request, page }) => {\n  // Preconditions: Category hierarchy 'Assemblies/Power Supplies' exists with 3 assigned parts\n  // Step 1: Send GET /api/part/category/<powerSuppliesId>/\n  // Expected: HTTP 200 OK returned with id, name='Power Supplies', pathstring='Assemblies/Power Supplies', and part_count=3\n});",
+      "assertions": [
+        "HTTP 200 OK returned with id, name='Power Supplies', pathstring='Assemblies/Power Supplies', and part_count=3"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-005",
+      "testCaseId": "TC-INVENTREE-005",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-005: API - GET /api/part/category/{id}/ returns 404 for non-existent category\", async ({ request, page }) => {\n  // Preconditions: InvenTree instance is running\n  // Step 1: Send GET /api/part/category/999999/\n  // Expected: HTTP 404 Not Found returned with error details\n});",
+      "assertions": [
+        "HTTP 404 Not Found returned with error details"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-006",
+      "testCaseId": "TC-INVENTREE-006",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-006: API - PUT /api/part/category/{id}/ updates name and propagates pathstring\", async ({ request, page }) => {\n  // Preconditions: Parent category 'Robotics' exists with child category 'Sensors'; Sensors has pathstring 'Robotics/Sensors'\n  // Step 1: Send PUT /api/part/category/<roboticsId>/ with updatePayload and auth header\n  // Expected: HTTP 200 OK returned with updated name 'Advanced Robotics'\n  // Step 2: Send GET /api/part/category/<sensorsId>/ to inspect child category pathstring\n  // Expected: HTTP 200 OK returned with updated pathstring 'Advanced Robotics/Sensors'\n});",
+      "assertions": [
+        "HTTP 200 OK returned with updated name 'Advanced Robotics'",
+        "HTTP 200 OK returned with updated pathstring 'Advanced Robotics/Sensors'"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-007",
+      "testCaseId": "TC-INVENTREE-007",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-007: DB - PUT /api/part/category/{id}/ rejects circular hierarchy cycle\", async ({ request, page }) => {\n  // Preconditions: Category A is parent of Category B, Category B is parent of Category C\n  // Step 1: Send PUT /api/part/category/<categoryAId>/ with circularPayload attempting to set parent to Category C\n  // Expected: HTTP 400 Bad Request returned preventing circular hierarchy cycle (Category A -> B -> C -> A)\n});",
+      "assertions": [
+        "HTTP 400 Bad Request returned preventing circular hierarchy cycle (Category A -> B -> C -> A)"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-008",
+      "testCaseId": "TC-INVENTREE-008",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-008: API - DELETE /api/part/category/{id}/ successfully deletes empty category\", async ({ request, page }) => {\n  // Preconditions: An empty category 'Temporary Category' exists with zero parts and zero child categories\n  // Step 1: Send DELETE /api/part/category/<tempCategoryId>/ with auth header\n  // Expected: HTTP 204 No Content returned\n  // Step 2: Send GET /api/part/category/<tempCategoryId>/\n  // Expected: HTTP 404 Not Found confirms category was removed\n});",
+      "assertions": [
+        "HTTP 204 No Content returned",
+        "HTTP 404 Not Found confirms category was removed"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-009",
+      "testCaseId": "TC-INVENTREE-009",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-009: DB - DELETE /api/part/category/{id}/ blocked when category contains parts\", async ({ request, page }) => {\n  // Preconditions: Category 'Motors' contains 2 assigned parts\n  // Step 1: Send DELETE /api/part/category/<motorsId>/ with auth header\n  // Expected: HTTP 400 Bad Request returned with error message stating category cannot be deleted while it contains parts\n  // Step 2: Send GET /api/part/category/<motorsId>/\n  // Expected: HTTP 200 OK confirms category still exists and parts remain intact\n});",
+      "assertions": [
+        "HTTP 400 Bad Request returned with error message stating category cannot be deleted while it contains parts",
+        "HTTP 200 OK confirms category still exists and parts remain intact"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-010",
+      "testCaseId": "TC-INVENTREE-010",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-010: API - POST /api/part/ creates new Part with mandatory and optional attributes\", async ({ request, page }) => {\n  // Preconditions: Category 'Resistors' exists with known integer ID; Valid authentication token available\n  // Step 1: Send POST /api/part/ with partPayload and auth header\n  // Expected: HTTP 201 Created returned with integer id, name, category, IPN='RES-0805-10K', and active=true default\n});",
+      "assertions": [
+        "HTTP 201 Created returned with integer id, name, category, IPN='RES-0805-10K', and active=true default"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-011",
+      "testCaseId": "TC-INVENTREE-011",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-011: API - POST /api/part/ input validation and duplicate IPN rejection\", async ({ request, page }) => {\n  // Preconditions: Existing part exists with IPN 'MCU-STM32F401'; Valid authentication token available\n  // Step 1: Send POST /api/part/ with missingName\n  // Expected: HTTP 400 Bad Request returned with error on required field 'name'\n  // Step 2: Send POST /api/part/ with invalidCategory\n  // Expected: HTTP 400 Bad Request returned with invalid foreign key error on 'category'\n  // Step 3: Send POST /api/part/ with duplicateIpn\n  // Expected: HTTP 400 Bad Request returned stating IPN must be globally unique\n});",
+      "assertions": [
+        "HTTP 400 Bad Request returned with error on required field 'name'",
+        "HTTP 400 Bad Request returned with invalid foreign key error on 'category'",
+        "HTTP 400 Bad Request returned stating IPN must be globally unique"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-012",
+      "testCaseId": "TC-INVENTREE-012",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-012: API - GET /api/part/ paginated list envelope and response time SLA\", async ({ request, page }) => {\n  // Preconditions: Database populated with at least 50 distinct parts\n  // Step 1: Send GET /api/part/?limit=15&offset=0 and measure latency\n  // Expected: HTTP 200 OK returned within 2,000ms with envelope containing count >= 50, next URL, previous=null, and results array with length 15\n  // Step 2: Inspect first element of results array\n  // Expected: Item contains id, name, description, category object/ID, IPN, and active status\n});",
+      "assertions": [
+        "HTTP 200 OK returned within 2,000ms with envelope containing count >= 50, next URL, previous=null, and results array with length 15",
+        "Item contains id, name, description, category object/ID, IPN, and active status"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-013",
+      "testCaseId": "TC-INVENTREE-013",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-013: API - GET /api/part/ negative pagination boundary handling\", async ({ request, page }) => {\n  // Preconditions: InvenTree instance is running\n  // Step 1: Send GET /api/part/?limit=-5&offset=0\n  // Expected: HTTP 400 Bad Request returned rejecting negative limit\n  // Step 2: Send GET /api/part/?limit=10&offset=-10\n  // Expected: HTTP 400 Bad Request returned rejecting negative offset\n});",
+      "assertions": [
+        "HTTP 400 Bad Request returned rejecting negative limit",
+        "HTTP 400 Bad Request returned rejecting negative offset"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-014",
+      "testCaseId": "TC-INVENTREE-014",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-014: API - GET /api/part/{id}/ detail inspection with complete fields\", async ({ request, page }) => {\n  // Preconditions: Part exists with known ID, full flags, and units='pcs'\n  // Step 1: Send GET /api/part/<partId>/\n  // Expected: HTTP 200 OK returned with id, name, description, category, IPN, active, purchaseable, saleable, trackable, virtual, units, minimum_stock\n});",
+      "assertions": [
+        "HTTP 200 OK returned with id, name, description, category, IPN, active, purchaseable, saleable, trackable, virtual, units, minimum_stock"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-015",
+      "testCaseId": "TC-INVENTREE-015",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-015: API - PUT /api/part/{id}/ full replacement update and boolean defaults\", async ({ request, page }) => {\n  // Preconditions: Part exists with purchaseable=true, saleable=true\n  // Step 1: Send PUT /api/part/<partId>/ with fullUpdatePayload (omitting boolean flags)\n  // Expected: HTTP 200 OK returned with updated name and description, and omitted flags purchaseable and saleable defaulted to false\n});",
+      "assertions": [
+        "HTTP 200 OK returned with updated name and description, and omitted flags purchaseable and saleable defaulted to false"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-016",
+      "testCaseId": "TC-INVENTREE-016",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-016: API - PATCH /api/part/{id}/ partial delta update and inactive state toggle\", async ({ request, page }) => {\n  // Preconditions: Part exists with active=true, description='Original description'\n  // Step 1: Send PATCH /api/part/<partId>/ with patchPayload\n  // Expected: HTTP 200 OK returned with active=false, while name, category, and description remain intact\n  // Step 2: Send PATCH /api/part/<partId>/ with emptyPayload ({})\n  // Expected: HTTP 200 OK returned with no modifications (valid no-op)\n  // Step 3: Send GET /api/part/<partId>/ to verify inactive part readability\n  // Expected: HTTP 200 OK returned confirming part remains readable even when inactive\n});",
+      "assertions": [
+        "HTTP 200 OK returned with active=false, while name, category, and description remain intact",
+        "HTTP 200 OK returned with no modifications (valid no-op)",
+        "HTTP 200 OK returned confirming part remains readable even when inactive"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-017",
+      "testCaseId": "TC-INVENTREE-017",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-017: DB - DELETE /api/part/{id}/ blocked when part has active stock items\", async ({ request, page }) => {\n  // Preconditions: Part exists and has 1 or more associated stock items in inventory\n  // Step 1: Send DELETE /api/part/<stockPartId>/ with auth header\n  // Expected: HTTP 400 Bad Request returned preventing deletion of part with active stock items\n  // Step 2: Send GET /api/part/<stockPartId>/\n  // Expected: HTTP 200 OK confirms part remains in database\n});",
+      "assertions": [
+        "HTTP 400 Bad Request returned preventing deletion of part with active stock items",
+        "HTTP 200 OK confirms part remains in database"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-018",
+      "testCaseId": "TC-INVENTREE-018",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-018: API - DELETE /api/part/{id}/ succeeds for clean unreferenced part\", async ({ request, page }) => {\n  // Preconditions: Part exists with zero stock items, zero BOM entries, and zero purchase orders\n  // Step 1: Send DELETE /api/part/<cleanPartId>/ with auth header\n  // Expected: HTTP 204 No Content returned\n  // Step 2: Send GET /api/part/<cleanPartId>/\n  // Expected: HTTP 404 Not Found confirms part is removed\n});",
+      "assertions": [
+        "HTTP 204 No Content returned",
+        "HTTP 404 Not Found confirms part is removed"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-019",
+      "testCaseId": "TC-INVENTREE-019",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-019: API - GET /api/part/ multi-facet filter conjunction (category + active + search)\", async ({ request, page }) => {\n  // Preconditions: Database populated with diverse parts across multiple categories with active and inactive statuses\n  // Step 1: Send GET /api/part/?category=1&active=true&search=Capacitor and measure duration\n  // Expected: HTTP 200 OK returned within 3,000ms SLA, where every result matches category=1, active=true, and name/IPN containing 'Capacitor'\n});",
+      "assertions": [
+        "HTTP 200 OK returned within 3,000ms SLA, where every result matches category=1, active=true, and name/IPN containing 'Capacitor'"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-020",
+      "testCaseId": "TC-INVENTREE-020",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-020: API - GET /api/part/ search with zero matches returns HTTP 200 and empty results\", async ({ request, page }) => {\n  // Preconditions: InvenTree instance is running\n  // Step 1: Send GET /api/part/?search=TOTALLY_NON_EXISTENT_SEARCH_STRING_XYZ_999\n  // Expected: HTTP 200 OK returned with count=0 and results=[] (not HTTP 404)\n});",
+      "assertions": [
+        "HTTP 200 OK returned with count=0 and results=[] (not HTTP 404)"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-021",
+      "testCaseId": "TC-INVENTREE-021",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-021: API - Mutating write endpoints reject requests without Authorization token\", async ({ request, page }) => {\n  // Preconditions: InvenTree instance is operational\n  // Step 1: Send POST /api/part/category/ with validCategoryPayload but NO Authorization header\n  // Expected: HTTP 401 Unauthorized or HTTP 403 Forbidden returned rejecting unauthenticated write mutation\n  // Step 2: Send DELETE /api/part/1/ with NO Authorization header\n  // Expected: HTTP 401 Unauthorized or HTTP 403 Forbidden returned\n});",
+      "assertions": [
+        "HTTP 401 Unauthorized or HTTP 403 Forbidden returned rejecting unauthenticated write mutation",
+        "HTTP 401 Unauthorized or HTTP 403 Forbidden returned"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-022",
+      "testCaseId": "TC-INVENTREE-022",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-022: API - Mutating endpoints reject invalid or malformed tokens\", async ({ request, page }) => {\n  // Preconditions: InvenTree instance is operational\n  // Step 1: Send POST /api/part/ with valid part payload and 'Authorization: Token invalid_token_abc_123_xyz'\n  // Expected: HTTP 401 Unauthorized returned indicating 'Invalid token'\n});",
+      "assertions": [
+        "HTTP 401 Unauthorized returned indicating 'Invalid token'"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-023",
+      "testCaseId": "TC-INVENTREE-023",
+      "automationFeasible": true,
+      "recommendedHarness": "PLAYWRIGHT_TS",
+      "targetComponent": "PartManagementWebUI",
+      "targetEndpointOrUrl": "/web/part/",
+      "codeBlueprint": "// Harness: PLAYWRIGHT_TS\n// Target: PartManagementWebUI (/web/part/)\ntest(\"TC-INVENTREE-023: UI - Category Tree View interactive navigation and part list filtering\", async ({ request, page }) => {\n  // Preconditions: User is authenticated in web browser; Category tree contains root category with child categories and assigned parts\n  // Step 1: Navigate to /part/ and locate the left-hand Category Tree panel\n  // Expected: Category tree renders root nodes with expand/collapse icons\n  // Step 2: Click the expansion chevron on root category 'Electronics'\n  // Expected: Child category 'Passives' expands into view\n  // Step 3: Click on child category 'Passives'\n  // Expected: Parts list table updates to show only parts belonging to 'Passives', and breadcrumb updates\n});",
+      "assertions": [
+        "Category tree renders root nodes with expand/collapse icons",
+        "Child category 'Passives' expands into view",
+        "Parts list table updates to show only parts belonging to 'Passives', and breadcrumb updates"
+      ],
+      "executionTimeoutMs": 30000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-024",
+      "testCaseId": "TC-INVENTREE-024",
+      "automationFeasible": true,
+      "recommendedHarness": "PLAYWRIGHT_TS",
+      "targetComponent": "PartManagementWebUI",
+      "targetEndpointOrUrl": "/web/part/",
+      "codeBlueprint": "// Harness: PLAYWRIGHT_TS\n// Target: PartManagementWebUI (/web/part/)\ntest(\"TC-INVENTREE-024: UI - Create Part modal end-to-end user journey with client validation\", async ({ request, page }) => {\n  // Preconditions: User is logged into InvenTree web frontend with part creation permissions\n  // Step 1: Navigate to /part/ and click the 'Create Part' button\n  // Expected: Create Part modal opens with empty name and category selector\n  // Step 2: Click 'Submit' without filling required fields\n  // Expected: Client-side validation highlights 'Name' and 'Category' fields with error messages, preventing submission\n  // Step 3: Enter partName 'E2E Automated Resistor', select 'Passives' from category dropdown, and click 'Submit'\n  // Expected: Success toast notification is displayed, modal closes, and browser redirects to the new part detail page (/part/{id}/)\n});",
+      "assertions": [
+        "Create Part modal opens with empty name and category selector",
+        "Client-side validation highlights 'Name' and 'Category' fields with error messages, preventing submission",
+        "Success toast notification is displayed, modal closes, and browser redirects to the new part detail page (/part/{id}/)"
+      ],
+      "executionTimeoutMs": 30000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-025",
+      "testCaseId": "TC-INVENTREE-SEC-001",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-SEC-001: SEC - Broken Function Level Authorization: Read-Only token rejected on mutating endpoints\", async ({ request, page }) => {\n  // Preconditions: InvenTree instance is running with Django REST Framework permission policies enabled; Read-only API token 'token-viewer-ro' generated with only 'part.view_part' and 'part.view_partcategory' permissions\n  // Step 1: Send POST request to /api/part/category/ with categoryPayload and header 'Authorization: Token token-viewer-ro'\n  // Expected: HTTP 403 Forbidden returned with message 'You do not have permission to perform this action.'\n  // Step 2: Send POST request to /api/part/ with partPayload and header 'Authorization: Token token-viewer-ro'\n  // Expected: HTTP 403 Forbidden returned; no new Part record is inserted into the database\n  // Step 3: Send DELETE request to /api/part/1/ with header 'Authorization: Token token-viewer-ro'\n  // Expected: HTTP 403 Forbidden returned; existing Part is untouched\n});",
+      "assertions": [
+        "HTTP 403 Forbidden returned with message 'You do not have permission to perform this action.'",
+        "HTTP 403 Forbidden returned; no new Part record is inserted into the database",
+        "HTTP 403 Forbidden returned; existing Part is untouched"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-026",
+      "testCaseId": "TC-INVENTREE-SEC-002",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-SEC-002: SEC - Broken Object Level Authorization (BOLA/IDOR): Horizontal isolation and ID enumeration guard\", async ({ request, page }) => {\n  // Preconditions: Tenant A holds Part ID 101 with restricted visibility flag; Tenant B holds active token 'token-tenant-b' with no permissions over Tenant A assets\n  // Step 1: Send GET request to /api/part/101/ with header 'Authorization: Token token-tenant-b'\n  // Expected: HTTP 404 Not Found returned (or HTTP 403), preventing object existence disclosure to unauthorized caller\n  // Step 2: Send PATCH request to /api/part/101/ with tamperedPayload and header 'Authorization: Token token-tenant-b'\n  // Expected: HTTP 404 Not Found or HTTP 403 Forbidden returned; target Part entity remains unchanged\n});",
+      "assertions": [
+        "HTTP 404 Not Found returned (or HTTP 403), preventing object existence disclosure to unauthorized caller",
+        "HTTP 404 Not Found or HTTP 403 Forbidden returned; target Part entity remains unchanged"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-027",
+      "testCaseId": "TC-INVENTREE-SEC-003",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCategoryApi",
+      "targetEndpointOrUrl": "/api/part/category/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCategoryApi (/api/part/category/)\ntest(\"TC-INVENTREE-SEC-003: SEC - Stored Cross-Site Scripting (XSS) Sanitization on Part & Category metadata\", async ({ request, page }) => {\n  // Preconditions: Authenticated session with write permissions; Target category exists (ID 1)\n  // Step 1: Send POST request to /api/part/ with xssPartPayload and Authorization header\n  // Expected: HTTP 201 Created returned; payload is stored safely with HTML entity escaping or sanitized string\n  // Step 2: Navigate to Part detail view in UI using Playwright and inspect DOM rendering\n  // Expected: Part name and description render as raw escaped text; zero JavaScript execution or alert dialog triggers occur\n});",
+      "assertions": [
+        "HTTP 201 Created returned; payload is stored safely with HTML entity escaping or sanitized string",
+        "Part name and description render as raw escaped text; zero JavaScript execution or alert dialog triggers occur"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-028",
+      "testCaseId": "TC-INVENTREE-SEC-004",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-SEC-004: SEC - SQL & ORM Injection Defense on IPN and Filter Parameters\", async ({ request, page }) => {\n  // Preconditions: Authenticated API session active; Target database is PostgreSQL / SQLite backend\n  // Step 1: Send GET request to /api/part/?search=' OR '1'='1 with Authorization header\n  // Expected: HTTP 200 OK returned treating payload as literal search string; database does not execute raw SQL; zero unhandled 500 errors\n  // Step 2: Send POST request to /api/part/ with IPN: \"'; DROP TABLE part_part; --\", name: \"SQLi Probe\", category: 1\n  // Expected: API safely parameterizes and stores string as literal IPN or returns HTTP 400 validation error; database tables remain intact\n});",
+      "assertions": [
+        "HTTP 200 OK returned treating payload as literal search string; database does not execute raw SQL; zero unhandled 500 errors",
+        "API safely parameterizes and stores string as literal IPN or returns HTTP 400 validation error; database tables remain intact"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-029",
+      "testCaseId": "TC-INVENTREE-SEC-005",
+      "automationFeasible": true,
+      "recommendedHarness": "REST_API",
+      "targetComponent": "PartCatalogueApi",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: REST_API\n// Target: PartCatalogueApi (/api/part/)\ntest(\"TC-INVENTREE-SEC-005: SEC - Token Leakage, Forgery & Query Parameter Exposure Guard\", async ({ request, page }) => {\n  // Preconditions: Valid authentication token 'valid-sec-token-12345'; Server logging set to standard INFO level\n  // Step 1: Dispatch POST /api/part/category/ with 'Authorization: Bearer valid-sec-token-12345' (invalid auth scheme)\n  // Expected: HTTP 401 Unauthorized returned with WWW-Authenticate header requiring 'Token' scheme\n  // Step 2: Dispatch GET /api/part/?token=valid-sec-token-12345 without Authorization header\n  // Expected: API rejects URL query parameter token authentication with HTTP 401/403, preventing token exposure in proxy logs and browser history\n  // Step 3: Inspect API error response bodies across 401 and 403 responses\n  // Expected: Error payloads contain only generic rejection details; zero server stack traces or internal environment variables leaked\n});",
+      "assertions": [
+        "HTTP 401 Unauthorized returned with WWW-Authenticate header requiring 'Token' scheme",
+        "API rejects URL query parameter token authentication with HTTP 401/403, preventing token exposure in proxy logs and browser history",
+        "Error payloads contain only generic rejection details; zero server stack traces or internal environment variables leaked"
+      ],
+      "executionTimeoutMs": 5000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-030",
+      "testCaseId": "TC-INVENTREE-PERF-001",
+      "automationFeasible": true,
+      "recommendedHarness": "K6_PERF",
+      "targetComponent": "InvenTreeLoadCluster",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: K6_PERF\n// Target: InvenTreeLoadCluster (/api/part/)\ntest(\"TC-INVENTREE-PERF-001: PERF - High-Concurrency Multi-Facet Search Latency SLA under Peak Load\", async ({ request, page }) => {\n  // Preconditions: InvenTree database seeded with 10,000+ Part records and 200+ Part Categories; k6 performance test runner configured with 100 Virtual Users (VUs)\n  // Step 1: Warm up cache for 30s with 10 VUs hitting /api/part/ search endpoints\n  // Expected: Warm-up phase completes; response latency stabilizes under 500ms\n  // Step 2: Ramp up to 100 VUs generating 500 RPS executing randomized multi-facet search queries for 4 minutes\n  // Expected: p95 latency <= 2,000ms; p99 latency <= 3,000ms; HTTP 200 status code on >= 99.9% of requests\n  // Step 3: Assert error rate and database connection saturation metrics\n  // Expected: Error rate < 0.1%; zero HTTP 504 Gateway Timeouts; database connection pool does not exhaust\n});",
+      "assertions": [
+        "Warm-up phase completes; response latency stabilizes under 500ms",
+        "p95 latency <= 2,000ms; p99 latency <= 3,000ms; HTTP 200 status code on >= 99.9% of requests",
+        "Error rate < 0.1%; zero HTTP 504 Gateway Timeouts; database connection pool does not exhaust"
+      ],
+      "executionTimeoutMs": 120000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-031",
+      "testCaseId": "TC-INVENTREE-PERF-002",
+      "automationFeasible": true,
+      "recommendedHarness": "K6_PERF",
+      "targetComponent": "InvenTreeLoadCluster",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: K6_PERF\n// Target: InvenTreeLoadCluster (/api/part/)\ntest(\"TC-INVENTREE-PERF-002: PERF - Paginated Part Catalogue Read Throughput & Cache Efficiency\", async ({ request, page }) => {\n  // Preconditions: Catalogue populated with test datasets; k6 load test engine targeting GET /api/part/?limit=50\n  // Step 1: Execute sustained 800 RPS workload of paginated catalogue requests for 3 minutes\n  // Expected: p50 latency <= 150ms; p95 latency <= 500ms across all paginated response envelopes\n  // Step 2: Measure response payload transfer rates and serialization overhead\n  // Expected: Throughput >= 750 requests/second maintained without dropped connections\n});",
+      "assertions": [
+        "p50 latency <= 150ms; p95 latency <= 500ms across all paginated response envelopes",
+        "Throughput >= 750 requests/second maintained without dropped connections"
+      ],
+      "executionTimeoutMs": 120000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-032",
+      "testCaseId": "TC-INVENTREE-PERF-003",
+      "automationFeasible": true,
+      "recommendedHarness": "K6_PERF",
+      "targetComponent": "InvenTreeLoadCluster",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: K6_PERF\n// Target: InvenTreeLoadCluster (/api/part/)\ntest(\"TC-INVENTREE-PERF-003: PERF - Concurrent Category Tree Mutation & Lock Contention Under Parallel Writes\", async ({ request, page }) => {\n  // Preconditions: Root category created for stress testing (ID 999); 50 parallel API workers initialized with mutating tokens\n  // Step 1: Dispatch 50 concurrent POST requests to /api/part/category/ creating subcategories under parent 999\n  // Expected: All 50 categories created with HTTP 201 Created; zero deadlock exceptions (40001 / SQLITE_BUSY / Deadlock detected)\n  // Step 2: Assert tree pathstring recalculation integrity and write latency\n  // Expected: p95 write latency <= 1,000ms; tree lineage correctly points to parent 999 for all 50 children\n});",
+      "assertions": [
+        "All 50 categories created with HTTP 201 Created; zero deadlock exceptions (40001 / SQLITE_BUSY / Deadlock detected)",
+        "p95 write latency <= 1,000ms; tree lineage correctly points to parent 999 for all 50 children"
+      ],
+      "executionTimeoutMs": 120000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-033",
+      "testCaseId": "TC-INVENTREE-PERF-004",
+      "automationFeasible": true,
+      "recommendedHarness": "K6_PERF",
+      "targetComponent": "InvenTreeLoadCluster",
+      "targetEndpointOrUrl": "/api/part/",
+      "codeBlueprint": "// Harness: K6_PERF\n// Target: InvenTreeLoadCluster (/api/part/)\ntest(\"TC-INVENTREE-PERF-004: PERF - Soak & Memory Stability Under Sustained Multi-Facet Queries\", async ({ request, page }) => {\n  // Preconditions: Node and InvenTree application processes monitored with memory and connection telemetry hooks; Continuous 150 RPS background query load active\n  // Step 1: Execute steady-state search and part retrieval traffic at 150 RPS continuously for 60 minutes\n  // Expected: System maintains consistent latency without performance degradation over the 60-minute duration\n  // Step 2: Compare Resident Set Size (RSS) memory consumption between minute 5 and minute 60\n  // Expected: RSS memory growth <= 5% (demonstrating absence of ORM object or cache memory leaks)\n  // Step 3: Verify database connection pool active vs idle connection counters\n  // Expected: Zero leaked connections; pool returns to baseline idle level upon test completion\n});",
+      "assertions": [
+        "System maintains consistent latency without performance degradation over the 60-minute duration",
+        "RSS memory growth <= 5% (demonstrating absence of ORM object or cache memory leaks)",
+        "Zero leaked connections; pool returns to baseline idle level upon test completion"
+      ],
+      "executionTimeoutMs": 120000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-034",
+      "testCaseId": "TC-INVENTREE-A11Y-001",
+      "automationFeasible": true,
+      "recommendedHarness": "AXE_A11Y",
+      "targetComponent": "PartManagementWebUI",
+      "targetEndpointOrUrl": "/web/part/",
+      "codeBlueprint": "// Harness: AXE_A11Y\n// Target: PartManagementWebUI (/web/part/)\ntest(\"TC-INVENTREE-A11Y-001: A11Y - WCAG 2.1 AA Keyboard Navigation & Focus Hierarchy in Category Tree View\", async ({ request, page }) => {\n  // Preconditions: InvenTree web frontend running in Chromium via Playwright; Category tree loaded with root and multi-level child categories\n  // Step 1: Navigate to Part Management view and press Tab until focus reaches the Category Tree container\n  // Expected: Focus lands on first tree node with a visible, high-contrast focus indicator (contrast ratio >= 3:1)\n  // Step 2: Use Arrow Down and Arrow Up keys to navigate between sibling category nodes\n  // Expected: Focus moves sequentially without requiring mouse interaction; active descendant or roving tabindex is maintained\n  // Step 3: Press Arrow Right on a collapsed parent node, then Arrow Left on an expanded node\n  // Expected: Arrow Right expands child categories; Arrow Left collapses them; aria-expanded reflects boolean state ('true'/'false')\n  // Step 4: Press Enter or Space on a selected node\n  // Expected: Category is selected; parts list updates to show category parts; zero keyboard traps encountered\n});",
+      "assertions": [
+        "Focus lands on first tree node with a visible, high-contrast focus indicator (contrast ratio >= 3:1)",
+        "Focus moves sequentially without requiring mouse interaction; active descendant or roving tabindex is maintained",
+        "Arrow Right expands child categories; Arrow Left collapses them; aria-expanded reflects boolean state ('true'/'false')",
+        "Category is selected; parts list updates to show category parts; zero keyboard traps encountered"
+      ],
+      "executionTimeoutMs": 15000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-035",
+      "testCaseId": "TC-INVENTREE-A11Y-002",
+      "automationFeasible": true,
+      "recommendedHarness": "AXE_A11Y",
+      "targetComponent": "PartManagementWebUI",
+      "targetEndpointOrUrl": "/web/part/",
+      "codeBlueprint": "// Harness: AXE_A11Y\n// Target: PartManagementWebUI (/web/part/)\ntest(\"TC-INVENTREE-A11Y-002: A11Y - WCAG 2.1 AA Dialog Focus Trap, Escape Key & ARIA Modality in Create Part Modal\", async ({ request, page }) => {\n  // Preconditions: Web frontend operational in Playwright browser context; User opens 'Create Part' modal dialog\n  // Step 1: Trigger 'Add Part' button in UI via keyboard Enter key\n  // Expected: Modal opens; focus automatically shifts to the first interactive field (Part Name input) or the modal container\n  // Step 2: Assert modal DOM attributes and ARIA roles\n  // Expected: Modal element contains role='dialog', aria-modal='true', and an accessible name via aria-labelledby or aria-label\n  // Step 3: Tab through all form fields to the final element (Cancel button) and press Tab once more\n  // Expected: Focus wraps around to the first focusable element inside the modal; background page content is inert and unreachable\n  // Step 4: Press the Escape key\n  // Expected: Modal closes cleanly; focus is restored back to the original 'Add Part' trigger button\n});",
+      "assertions": [
+        "Modal opens; focus automatically shifts to the first interactive field (Part Name input) or the modal container",
+        "Modal element contains role='dialog', aria-modal='true', and an accessible name via aria-labelledby or aria-label",
+        "Focus wraps around to the first focusable element inside the modal; background page content is inert and unreachable",
+        "Modal closes cleanly; focus is restored back to the original 'Add Part' trigger button"
+      ],
+      "executionTimeoutMs": 15000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-036",
+      "testCaseId": "TC-INVENTREE-A11Y-003",
+      "automationFeasible": true,
+      "recommendedHarness": "AXE_A11Y",
+      "targetComponent": "PartManagementWebUI",
+      "targetEndpointOrUrl": "/web/part/",
+      "codeBlueprint": "// Harness: AXE_A11Y\n// Target: PartManagementWebUI (/web/part/)\ntest(\"TC-INVENTREE-A11Y-003: A11Y - Automated Axe-Core Full Page Accessibility Sweep on Part Views\", async ({ request, page }) => {\n  // Preconditions: @axe-core/playwright test integration initialized in test harness; Part Index and Create Part pages rendered\n  // Step 1: Execute AxeBuilder audit on the Part Management catalogue view with category sidebar expanded\n  // Expected: Zero violations with impact 'critical' or 'serious'; color contrast ratio >= 4.5:1 for standard text\n  // Step 2: Execute AxeBuilder audit on the open 'Create Part' modal dialog\n  // Expected: Zero form label violations (all inputs have associated <label> elements or aria-label); zero missing landmark warnings\n});",
+      "assertions": [
+        "Zero violations with impact 'critical' or 'serious'; color contrast ratio >= 4.5:1 for standard text",
+        "Zero form label violations (all inputs have associated <label> elements or aria-label); zero missing landmark warnings"
+      ],
+      "executionTimeoutMs": 15000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    },
+    {
+      "id": "AUT-INVENTREE-037",
+      "testCaseId": "TC-INVENTREE-A11Y-004",
+      "automationFeasible": true,
+      "recommendedHarness": "AXE_A11Y",
+      "targetComponent": "PartManagementWebUI",
+      "targetEndpointOrUrl": "/web/part/",
+      "codeBlueprint": "// Harness: AXE_A11Y\n// Target: PartManagementWebUI (/web/part/)\ntest(\"TC-INVENTREE-A11Y-004: A11Y - Screen Reader Error Announcements & Live Regions on Validation Failures\", async ({ request, page }) => {\n  // Preconditions: Create Part modal open in browser; Form validation triggered with blank mandatory name field\n  // Step 1: Submit 'Create Part' form with empty required fields\n  // Expected: Form validation triggers; invalid input element marked with aria-invalid='true' and linked to error text via aria-describedby\n  // Step 2: Inspect dynamic error summary or alert notification banner in the DOM\n  // Expected: Error message container has role='alert' or aria-live='assertive', allowing assistive technologies to announce the failure immediately\n});",
+      "assertions": [
+        "Form validation triggers; invalid input element marked with aria-invalid='true' and linked to error text via aria-describedby",
+        "Error message container has role='alert' or aria-live='assertive', allowing assistive technologies to announce the failure immediately"
+      ],
+      "executionTimeoutMs": 15000,
+      "status": "READY_FOR_HARNESS",
+      "createdAt": "2026-10-04T14:50:00.000Z"
+    }
+  ]
+}

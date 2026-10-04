@@ -1,0 +1,116 @@
+{
+  "featureId": "FEAT-SELF-SERVICE-ORDER-CANCELLATION",
+  "featureName": "Self-Service Order Cancellation",
+  "featureSlug": "self-service-order-cancellation",
+  "epicId": "EPIC-ORDERS-001",
+  "overallStatus": "APPROVED",
+  "currentStage": "06.release-gate",
+  "stages": {
+    "01.requirement-analysis": {
+      "status": "COMPLETED",
+      "gate": "GATE-REQ-001",
+      "gateScore": 0.97,
+      "evaluators": {
+        "EVAL-SCHEMA-001": {
+          "score": 1,
+          "status": "PASSED"
+        },
+        "EVAL-AMBIGUITY-SEMANTIC": {
+          "score": 0.94,
+          "status": "PASSED"
+        }
+      },
+      "completedAt": "2026-10-04T15:19:41.063Z"
+    },
+    "02.test-design": {
+      "status": "COMPLETED",
+      "gate": "GATE-TEST-DESIGN-001",
+      "gateScore": 0.98,
+      "evaluators": {
+        "EVAL-REFERENTIAL-001": {
+          "score": 1,
+          "status": "PASSED"
+        },
+        "EVAL-COVERAGE-001": {
+          "score": 1,
+          "status": "PASSED"
+        },
+        "EVAL-COMPLETENESS-SEMANTIC": {
+          "score": 0.94,
+          "status": "PASSED"
+        }
+      },
+      "completedAt": "2026-10-04T15:19:41.080Z"
+    },
+    "03.nfr-workforce": {
+      "status": "COMPLETED",
+      "gate": "GATE-SEC-001 / GATE-PERF-001 / GATE-A11Y-001",
+      "gateScore": 1,
+      "completedAt": "2026-10-04T15:19:41.111Z"
+    },
+    "04.sdet-blueprint": {
+      "status": "COMPLETED",
+      "gate": "GATE-SDET-001",
+      "gateScore": 1,
+      "evaluators": {
+        "EVAL-COVERAGE-001": {
+          "score": 1,
+          "status": "PASSED"
+        }
+      },
+      "completedAt": "2026-10-04T15:19:41.122Z"
+    },
+    "05.test-validation": {
+      "status": "COMPLETED",
+      "gate": "GATE-VAL-001",
+      "gateScore": 0.94,
+      "evaluators": {
+        "EVAL-DRIFT-SEMANTIC": {
+          "score": 0.94,
+          "status": "PASSED"
+        }
+      },
+      "completedAt": "2026-10-04T15:19:41.133Z"
+    },
+    "06.release-gate": {
+      "status": "COMPLETED",
+      "gate": "GATE-RELEASE-001",
+      "gateScore": 1,
+      "releaseRecord": "REL-EPIC-ORDERS-001",
+      "completedAt": "2026-10-04T15:19:41.135Z"
+    }
+  },
+  "artifacts": {
+    "requirement": "REQ-1001",
+    "acceptanceCriteria": [
+      "AC-2001",
+      "AC-2002"
+    ],
+    "scenarios": [
+      "SCN-3001",
+      "SCN-3002",
+      "SCN-3003"
+    ],
+    "functionalTestCases": [
+      "TC-4001",
+      "TC-4002",
+      "TC-4003"
+    ],
+    "nfrTestCases": [
+      "TC-4010",
+      "TC-4020",
+      "TC-4030"
+    ],
+    "blueprints": [
+      "AUT-5001",
+      "AUT-5002",
+      "AUT-5003",
+      "AUT-5004",
+      "AUT-5005",
+      "AUT-5006"
+    ],
+    "validationReport": "validation/validation-report.json",
+    "releaseGateRecord": "REL-EPIC-ORDERS-001"
+  },
+  "nextAction": null
+}

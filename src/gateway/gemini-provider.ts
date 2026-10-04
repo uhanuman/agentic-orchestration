@@ -68,56 +68,72 @@ ${JSON.stringify(params.schema, null, 2)}
 Return only the raw JSON string without surrounding backticks or markdown if possible.
 `;
 
-    try {
-      const response = await this.client.models.generateContent({
-        model: modelName,
-        contents: promptWithSchema,
-        config: {
-          systemInstruction: params.systemPrompt,
-          responseMimeType: 'application/json',
-          temperature: params.temperature ?? 0.2,
-          maxOutputTokens: params.maxTokens ?? 4096,
-        },
-      });
+    const initialModel = params.modelOverride || this.defaultModel;
+    const fallbackModels = Array.from(new Set([initialModel, 'gemini-3.7-flash', 'gemini-flash-latest']));
 
-      const durationMs = Date.now() - startTime;
-      const rawText = response.text || '{}';
-
-      // Parse JSON with clean fallback
-      let parsedData: T;
+    let lastError: any;
+    for (let attempt = 0; attempt < fallbackModels.length; attempt++) {
+      const activeModel = fallbackModels[attempt];
       try {
-        parsedData = JSON.parse(rawText) as T;
-      } catch {
-        const cleaned = rawText
-          .replace(/^```json\s*/, '')
-          .replace(/^```\s*/, '')
-          .replace(/```$/, '')
-          .trim();
-        parsedData = JSON.parse(cleaned) as T;
+        console.log(`[GeminiProvider] Attempting model: ${activeModel} (attempt ${attempt + 1}/${fallbackModels.length})`);
+        const response = await this.client.models.generateContent({
+          model: activeModel,
+          contents: promptWithSchema,
+          config: {
+            systemInstruction: params.systemPrompt,
+            responseMimeType: 'application/json',
+            temperature: params.temperature ?? 0.2,
+            maxOutputTokens: params.maxTokens ?? 8192,
+          },
+        });
+
+        const durationMs = Date.now() - startTime;
+        const rawText = response.text || '{}';
+
+        // Parse JSON with clean fallback
+        let parsedData: T;
+        try {
+          parsedData = JSON.parse(rawText) as T;
+        } catch {
+          const cleaned = rawText
+            .replace(/^```json\s*/, '')
+            .replace(/^```\s*/, '')
+            .replace(/```$/, '')
+            .trim();
+          parsedData = JSON.parse(cleaned) as T;
+        }
+
+        // Usage metrics
+        const usageMetadata = response.usageMetadata;
+        const promptTokens = usageMetadata?.promptTokenCount || Math.ceil((params.systemPrompt.length + params.userPrompt.length) / 4);
+        const completionTokens = usageMetadata?.candidatesTokenCount || Math.ceil(rawText.length / 4);
+        const totalTokens = usageMetadata?.totalTokenCount || promptTokens + completionTokens;
+
+        const costUsd = this.calculateCost(activeModel, promptTokens, completionTokens);
+
+        return {
+          data: parsedData,
+          usage: {
+            promptTokens,
+            completionTokens,
+            totalTokens,
+          },
+          durationMs,
+          modelUsed: activeModel,
+          providerName: this.providerName,
+          costUsd,
+        };
+      } catch (err: any) {
+        lastError = err;
+        const errMsg = err?.message || String(err);
+        console.warn(`[GeminiProvider] Model ${activeModel} failed: ${errMsg}`);
+        if ((errMsg.includes('503') || errMsg.includes('429') || errMsg.includes('high demand') || errMsg.includes('UNAVAILABLE')) && attempt < fallbackModels.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          continue;
+        }
+        throw new Error(`GeminiProvider execution failed: ${errMsg}`);
       }
-
-      // Usage metrics
-      const usageMetadata = response.usageMetadata;
-      const promptTokens = usageMetadata?.promptTokenCount || Math.ceil((params.systemPrompt.length + params.userPrompt.length) / 4);
-      const completionTokens = usageMetadata?.candidatesTokenCount || Math.ceil(rawText.length / 4);
-      const totalTokens = usageMetadata?.totalTokenCount || promptTokens + completionTokens;
-
-      const costUsd = this.calculateCost(modelName, promptTokens, completionTokens);
-
-      return {
-        data: parsedData,
-        usage: {
-          promptTokens,
-          completionTokens,
-          totalTokens,
-        },
-        durationMs,
-        modelUsed: modelName,
-        providerName: this.providerName,
-        costUsd,
-      };
-    } catch (err: any) {
-      throw new Error(`GeminiProvider execution failed: ${err.message || String(err)}`);
     }
+    throw new Error(`GeminiProvider execution failed: ${lastError?.message || 'All candidate models exhausted'}`);
   }
 }

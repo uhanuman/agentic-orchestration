@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "workspaceName": "Agentic Quality Engineering & Automation Workspace",
+  "version": "1.0.0",
+  "artifactOrganization": "FEATURE_CENTRIC",
+  "repositories": {
+    "repo1": {
+      "name": "agentic-orchestration",
+      "role": "Agentic Workflow, Evals, Prompts & Quality Artifacts",
+      "rootDir": ".",
+      "paths": {
+        "agentsDir": "./agents",
+        "evalsDir": "./evals",
+        "artifactsRoot": "./generated-artifacts",
+        "featuresRoot": "./generated-artifacts/features",
+        "artifacts": {
+          "featureRoot": "./generated-artifacts/features/{FEATURE_SLUG}",
+          "requirements": "./generated-artifacts/features/{FEATURE_SLUG}/req",
+          "testCases": "./generated-artifacts/features/{FEATURE_SLUG}/test-cases",
+          "nfrs": "./generated-artifacts/features/{FEATURE_SLUG}/nfrs",
+          "blueprints": "./generated-artifacts/features/{FEATURE_SLUG}/blueprints",
+          "validation": "./generated-artifacts/features/{FEATURE_SLUG}/validation",
+          "coverageDocs": "./generated-artifacts/coverage-docs",
+          "traceability": "./generated-artifacts/traceability"
+        }
+      }
+    },
+    "repo2": {
+      "name": "agentic-test-automation",
+      "role": "Test Automation Framework & Executable Scripts",
+      "rootDir": "../agentic-test-automation",
+      "paths": {
+        "testsDir": "../agentic-test-automation/tests",
+        "playwrightConfig": "../agentic-test-automation/playwright.config.ts",
+        "reportsDir": "../agentic-test-automation/playwright-report",
+        "resultsDir": "../agentic-test-automation/test-results"
+      }
+    }
+  },
+  "variablePlaceholders": {
+    "{REPO1_ROOT}": ".",
+    "{ARTIFACTS_ROOT}": "./generated-artifacts",
+    "{FEATURES_ROOT}": "./generated-artifacts/features",
+    "{FEATURE_DIR}": "./generated-artifacts/features/{FEATURE_SLUG}",
+    "{REQ_ARTIFACTS_DIR}": "./generated-artifacts/features/{FEATURE_SLUG}/req",
+    "{TC_ARTIFACTS_DIR}": "./generated-artifacts/features/{FEATURE_SLUG}/test-cases",
+    "{NFRS_DIR}": "./generated-artifacts/features/{FEATURE_SLUG}/nfrs",
+    "{BLUEPRINTS_DIR}": "./generated-artifacts/features/{FEATURE_SLUG}/blueprints",
+    "{VALIDATION_DIR}": "./generated-artifacts/features/{FEATURE_SLUG}/validation",
+    "{COVERAGE_DOCS_DIR}": "./generated-artifacts/coverage-docs",
+    "{TRACEABILITY_DIR}": "./generated-artifacts/traceability",
+    "{REPO2_ROOT}": "../agentic-test-automation",
+    "{AUTOMATION_TESTS_DIR}": "../agentic-test-automation/tests"
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "folders": [
+    {
+      "name": "Agentic Orchestration",
+      "path": ".."
+    },
+    {
+      "name": "Agentic Test Automation",
+      "path": "../../agentic-test-automation"
+    }
+  ],
+  "settings": {
+    // ───────────── Explorer: sorting & behaviour ─────────────
+    // "default" = folders first, then files (A-Z). Other options: "mixed", "filesFirst", "type", "modified", "foldersNestsFiles"
+    "explorer.sortOrder": "default",
+    "explorer.sortOrderLexicographicOptions": "case-insensitive",
+    "explorer.compactFolders": false,
+    "explorer.confirmDelete": true,
+    "explorer.confirmDragAndDrop": false,
+    "explorer.excludeGitIgnore": false,
+    // Nest related files under their parent (e.g. package.json -> lock files)
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+      "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, .npmrc, .nvmrc, .eslintrc*, .prettierrc*, .prettierignore, .editorconfig, tsconfig*.json",
+      "*.ts": "${capture}.js, ${capture}.d.ts, ${capture}.js.map",
+      "*.tsx": "${capture}.test.tsx, ${capture}.spec.tsx, ${capture}.stories.tsx",
+      ".env": ".env.*",
+      "README.md": "LICENSE, CHANGELOG.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md",
+      "Dockerfile": ".dockerignore, docker-compose*.yml, docker-compose*.yaml"
+    },
+    // ───────────── Hide unwanted files & folders ─────────────
+    "files.exclude": {
+      "**/dist": true,
+      "**/node_modules": true,
+      "**/.git": true,
+      "**/.svn": true,
+      "**/.hg": true,
+      "**/.DS_Store": true,
+      "**/Thumbs.db": true,
+      "**/desktop.ini": true,
+      "**/*.pyc": true,
+      "**/__pycache__": true,
+      "**/.pytest_cache": true,
+      "**/.mypy_cache": true,
+      "**/.ruff_cache": true,
+      "**/.idea": true,
+      "**/*.swp": true
+    },
+    // Excluded from search (also keeps search fast)
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/bower_components": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/out": true,
+      "**/coverage": true,
+      "**/.next": true,
+      "**/.nuxt": true,
+      "**/.venv": true,
+      "**/venv": true,
+      "**/*.min.js": true,
+      "**/*.map": true,
+      "**/package-lock.json": true,
+      "**/yarn.lock": true,
+      "**/pnpm-lock.yaml": true
+    },
+    // Excluded from the file watcher (better performance)
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/node_modules/**": true,
+      "**/dist/**": true,
+      "**/build/**": true,
+      "**/.venv/**": true,
+      "**/__pycache__/**": true
+    },
+    // ───────────── Auto save ─────────────
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+    // ───────────── File hygiene ─────────────
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.eol": "\n",
+    "files.encoding": "utf8",
+    // ───────────── Formatting ─────────────
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
+    "editor.defaultFormatter": "esbenp.prettier-vscode", // requires the Prettier extension
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    // Per-language formatter overrides
+    "[python]": {
+      "editor.defaultFormatter": "charliermarsh.ruff", // or "ms-python.black-formatter"
+      "editor.tabSize": 4
+    },
+    "[markdown]": {
+      "files.trimTrailingWhitespace": false,
+      "editor.wordWrap": "on"
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[html]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    // ───────────── Editor quality of life ─────────────
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": "active",
+    "editor.minimap.enabled": false,
+    "editor.rulers": [
+      100
+    ],
+    "editor.renderWhitespace": "boundary",
+    "editor.linkedEditing": true,
+    "editor.stickyScroll.enabled": true,
+    "editor.cursorSmoothCaretAnimation": "on",
+    "editor.smoothScrolling": true,
+    "breadcrumbs.enabled": true,
+    // ───────────── Git ─────────────
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    "git.openRepositoryInParentFolders": "never",
+    // ───────────── Misc ─────────────
+    "workbench.editor.enablePreview": false,
+    "workbench.editor.highlightModifiedTabs": true,
+    "emmet.includeLanguages": {
+      "javascript": "javascriptreact"
+    }
+  }
+}

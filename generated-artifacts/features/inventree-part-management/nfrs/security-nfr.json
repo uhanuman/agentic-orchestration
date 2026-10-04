@@ -1,0 +1,213 @@
+{
+  "agentId": "AGT-SECURITY-001",
+  "requirementId": "REQ-INVENTREE-PART-001",
+  "testCases": [
+    {
+      "id": "TC-INVENTREE-SEC-001",
+      "scenarioId": "SCN-INVENTREE-021",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-013",
+      "title": "SEC - Broken Function Level Authorization: Read-Only token rejected on mutating endpoints",
+      "type": "SECURITY",
+      "priority": "P0",
+      "preconditions": [
+        "InvenTree instance is running with Django REST Framework permission policies enabled",
+        "Read-only API token 'token-viewer-ro' generated with only 'part.view_part' and 'part.view_partcategory' permissions"
+      ],
+      "testDataRequirements": {
+        "headers": {
+          "Authorization": "Token token-viewer-ro",
+          "Content-Type": "application/json"
+        },
+        "categoryPayload": {
+          "name": "Unauthorized Category",
+          "description": "Attempted creation by read-only user"
+        },
+        "partPayload": {
+          "name": "Unauthorized Part",
+          "IPN": "SEC-PART-001",
+          "category": 1
+        }
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Send POST request to /api/part/category/ with categoryPayload and header 'Authorization: Token token-viewer-ro'",
+          "expectedResult": "HTTP 403 Forbidden returned with message 'You do not have permission to perform this action.'"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Send POST request to /api/part/ with partPayload and header 'Authorization: Token token-viewer-ro'",
+          "expectedResult": "HTTP 403 Forbidden returned; no new Part record is inserted into the database"
+        },
+        {
+          "stepIndex": 3,
+          "action": "Send DELETE request to /api/part/1/ with header 'Authorization: Token token-viewer-ro'",
+          "expectedResult": "HTTP 403 Forbidden returned; existing Part is untouched"
+        }
+      ],
+      "postConditions": [
+        "Database state remains unmodified; security audit log records 403 unauthorized attempt"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-SEC-002",
+      "scenarioId": "SCN-INVENTREE-014",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-008",
+      "title": "SEC - Broken Object Level Authorization (BOLA/IDOR): Horizontal isolation and ID enumeration guard",
+      "type": "SECURITY",
+      "priority": "P0",
+      "preconditions": [
+        "Tenant A holds Part ID 101 with restricted visibility flag",
+        "Tenant B holds active token 'token-tenant-b' with no permissions over Tenant A assets"
+      ],
+      "testDataRequirements": {
+        "headers": {
+          "Authorization": "Token token-tenant-b",
+          "Content-Type": "application/json"
+        },
+        "tamperedPayload": {
+          "name": "Tampered Name Attempt",
+          "active": false
+        }
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Send GET request to /api/part/101/ with header 'Authorization: Token token-tenant-b'",
+          "expectedResult": "HTTP 404 Not Found returned (or HTTP 403), preventing object existence disclosure to unauthorized caller"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Send PATCH request to /api/part/101/ with tamperedPayload and header 'Authorization: Token token-tenant-b'",
+          "expectedResult": "HTTP 404 Not Found or HTTP 403 Forbidden returned; target Part entity remains unchanged"
+        }
+      ],
+      "postConditions": [
+        "Part 101 retains original attributes and ownership unaltered"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-SEC-003",
+      "scenarioId": "SCN-INVENTREE-010",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-006",
+      "title": "SEC - Stored Cross-Site Scripting (XSS) Sanitization on Part & Category metadata",
+      "type": "SECURITY",
+      "priority": "P1",
+      "preconditions": [
+        "Authenticated session with write permissions",
+        "Target category exists (ID 1)"
+      ],
+      "testDataRequirements": {
+        "xssPartPayload": {
+          "name": "Safe Part Name <script>alert('XSS-NAME')</script>",
+          "description": "<img src=x onerror=\"javascript:alert('XSS-DESC')\" />",
+          "IPN": "SEC-XSS-001",
+          "category": 1
+        }
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Send POST request to /api/part/ with xssPartPayload and Authorization header",
+          "expectedResult": "HTTP 201 Created returned; payload is stored safely with HTML entity escaping or sanitized string"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Navigate to Part detail view in UI using Playwright and inspect DOM rendering",
+          "expectedResult": "Part name and description render as raw escaped text; zero JavaScript execution or alert dialog triggers occur"
+        }
+      ],
+      "postConditions": [
+        "No malicious script execution in UI or API clients; DOM safe from injection"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-SEC-004",
+      "scenarioId": "SCN-INVENTREE-011",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-006",
+      "title": "SEC - SQL & ORM Injection Defense on IPN and Filter Parameters",
+      "type": "SECURITY",
+      "priority": "P0",
+      "preconditions": [
+        "Authenticated API session active",
+        "Target database is PostgreSQL / SQLite backend"
+      ],
+      "testDataRequirements": {
+        "sqliPayloads": [
+          "'; DROP TABLE part_part; --",
+          "' OR '1'='1",
+          "1 UNION SELECT null, username, password FROM auth_user --"
+        ]
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Send GET request to /api/part/?search=' OR '1'='1 with Authorization header",
+          "expectedResult": "HTTP 200 OK returned treating payload as literal search string; database does not execute raw SQL; zero unhandled 500 errors"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Send POST request to /api/part/ with IPN: \"'; DROP TABLE part_part; --\", name: \"SQLi Probe\", category: 1",
+          "expectedResult": "API safely parameterizes and stores string as literal IPN or returns HTTP 400 validation error; database tables remain intact"
+        }
+      ],
+      "postConditions": [
+        "Database integrity verified; zero table alterations or SQL syntax leakages in error messages"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-SEC-005",
+      "scenarioId": "SCN-INVENTREE-022",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-013",
+      "title": "SEC - Token Leakage, Forgery & Query Parameter Exposure Guard",
+      "type": "SECURITY",
+      "priority": "P0",
+      "preconditions": [
+        "Valid authentication token 'valid-sec-token-12345'",
+        "Server logging set to standard INFO level"
+      ],
+      "testDataRequirements": {
+        "forgedTokens": [
+          "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.fake_sig",
+          "Token null",
+          "Bearer valid-sec-token-12345"
+        ]
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Dispatch POST /api/part/category/ with 'Authorization: Bearer valid-sec-token-12345' (invalid auth scheme)",
+          "expectedResult": "HTTP 401 Unauthorized returned with WWW-Authenticate header requiring 'Token' scheme"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Dispatch GET /api/part/?token=valid-sec-token-12345 without Authorization header",
+          "expectedResult": "API rejects URL query parameter token authentication with HTTP 401/403, preventing token exposure in proxy logs and browser history"
+        },
+        {
+          "stepIndex": 3,
+          "action": "Inspect API error response bodies across 401 and 403 responses",
+          "expectedResult": "Error payloads contain only generic rejection details; zero server stack traces or internal environment variables leaked"
+        }
+      ],
+      "postConditions": [
+        "Sensitive tokens remain protected from logging, sniffing, or invalid scheme acceptance"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    }
+  ]
+}

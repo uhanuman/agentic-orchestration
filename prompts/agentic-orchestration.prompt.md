@@ -517,7 +517,43 @@ Milestone 5: Pipeline Orchestrator, Observability & CLI Runner
 
 
 
-# NOTE: 
-- Agents & evals should be drafted as markdown files
-- test-scripts should go into `/automation/tests/`
-- All the other test-artifacts should go into `/test-artifacts` 
+# NOTE: Multi-Repo Workspace Decoupled Architecture & Feature-Centric Organization
+
+### 1. Two Decoupled Repositories in Unified Workspace
+- **Repo-1 (`agentic-orchestration`)**: Executable markdown agents (`agents/`), evaluators (`evals/`), quality artifacts (`generated-artifacts/`), orchestrator (`agentic-orchestrator.md`, `run-orchestrator.ts`).
+- **Repo-2 (`agentic-test-automation`)**: Executable test harnesses (Playwright, REST API, Axe, k6) and test scripts (`tests/`).
+
+### 2. Feature-Centric Artifact Organization (`Option B`)
+All generated artifacts are organized into **Feature-Centric vertical slices** rooted under `{ARTIFACTS_ROOT}` (`./generated-artifacts/`):
+- **Why Feature-Centric:**
+  1. **Agent Context Window Efficiency:** Agents only load the files inside `{FEATURE_DIR}`, eliminating noise from unrelated features and saving LLM tokens.
+  2. **Zero Git Merge Collisions:** Teams and agents working on distinct features commit to independent directories (`features/<slug-a>/` vs `features/<slug-b>/`).
+  3. **Immediate Feature Status Visibility:** The state of development is maintained in a central `feature.manifest.json` right inside the feature folder.
+  4. **Clean Lifecycle & Deprecation:** Archiving or cleaning up a feature requires deleting only its dedicated directory.
+
+### 3. Feature Directory Layout & Central Path Variables (`workspace.config.json`)
+```text
+generated-artifacts/
+├── features/                                     <── {FEATURES_ROOT}
+│   └── {FEATURE_SLUG}/                           <── {FEATURE_DIR}
+│       ├── feature.manifest.json                 <── Feature State Machine & Status Card
+│       ├── req/                                  <── {REQ_ARTIFACTS_DIR} (REQ, AC markdown & JSON)
+│       ├── test-cases/                           <── {TC_ARTIFACTS_DIR} (SCN, Functional TC markdown & JSON)
+│       ├── nfrs/                                 <── {NFRS_DIR} (Security, Perf, Accessibility TCs)
+│       ├── blueprints/                           <── {BLUEPRINTS_DIR} (SDET Automation Blueprints)
+│       └── validation/                           <── {VALIDATION_DIR} (Drift analysis & gate signoffs)
+├── coverage-docs/                                <── {COVERAGE_DOCS_DIR} (Global portfolio coverage)
+└── traceability/                                 <── {TRACEABILITY_DIR} (Global end-to-end lineage matrix)
+```
+
+### 4. Real-Time Feature State Tracking (`feature.manifest.json`)
+If a feature is executed by one agent and the rest have not run, the team and subsequent agents track progress via `{FEATURE_DIR}/feature.manifest.json`:
+- Tracks completed stages, current stage, and pending stages.
+- Records gate verdicts (`GATE-REQ-001`, `GATE-TEST-DESIGN-001`, etc.).
+- Declares the exact `nextAction` and `nextAgents` required to continue execution.
+- Enables asynchronous execution, human review pauses, and resume-from-step workflows.
+
+### 5. Automation Target Mapping
+Executable test automation scripts produced by the SDET Blueprint Agent are written to:
+- `{AUTOMATION_TESTS_DIR}` (`../agentic-test-automation/tests/features/{FEATURE_SLUG}/`)
+

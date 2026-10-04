@@ -1,0 +1,166 @@
+{
+  "agentId": "AGT-PERFORMANCE-001",
+  "requirementId": "REQ-INVENTREE-PART-001",
+  "testCases": [
+    {
+      "id": "TC-INVENTREE-PERF-001",
+      "scenarioId": "SCN-INVENTREE-019",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-012",
+      "title": "PERF - High-Concurrency Multi-Facet Search Latency SLA under Peak Load",
+      "type": "PERFORMANCE",
+      "priority": "P1",
+      "preconditions": [
+        "InvenTree database seeded with 10,000+ Part records and 200+ Part Categories",
+        "k6 performance test runner configured with 100 Virtual Users (VUs)"
+      ],
+      "testDataRequirements": {
+        "workload": {
+          "vus": 100,
+          "duration": "5m",
+          "targetRps": 500,
+          "queryMatrix": [
+            "?search=resistor&active=true&category=5",
+            "?search=capacitor&limit=25&offset=50",
+            "?ordering=name&category=12"
+          ]
+        }
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Warm up cache for 30s with 10 VUs hitting /api/part/ search endpoints",
+          "expectedResult": "Warm-up phase completes; response latency stabilizes under 500ms"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Ramp up to 100 VUs generating 500 RPS executing randomized multi-facet search queries for 4 minutes",
+          "expectedResult": "p95 latency <= 2,000ms; p99 latency <= 3,000ms; HTTP 200 status code on >= 99.9% of requests"
+        },
+        {
+          "stepIndex": 3,
+          "action": "Assert error rate and database connection saturation metrics",
+          "expectedResult": "Error rate < 0.1%; zero HTTP 504 Gateway Timeouts; database connection pool does not exhaust"
+        }
+      ],
+      "postConditions": [
+        "System recovers to baseline idle latency (p95 < 150ms) within 30 seconds of ramp-down"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-PERF-002",
+      "scenarioId": "SCN-INVENTREE-012",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-007",
+      "title": "PERF - Paginated Part Catalogue Read Throughput & Cache Efficiency",
+      "type": "PERFORMANCE",
+      "priority": "P1",
+      "preconditions": [
+        "Catalogue populated with test datasets",
+        "k6 load test engine targeting GET /api/part/?limit=50"
+      ],
+      "testDataRequirements": {
+        "workload": {
+          "vus": 200,
+          "duration": "3m",
+          "targetRps": 800
+        }
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Execute sustained 800 RPS workload of paginated catalogue requests for 3 minutes",
+          "expectedResult": "p50 latency <= 150ms; p95 latency <= 500ms across all paginated response envelopes"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Measure response payload transfer rates and serialization overhead",
+          "expectedResult": "Throughput >= 750 requests/second maintained without dropped connections"
+        }
+      ],
+      "postConditions": [
+        "Database CPU utilization remains below 70% during peak read load"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-PERF-003",
+      "scenarioId": "SCN-INVENTREE-001",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-001",
+      "title": "PERF - Concurrent Category Tree Mutation & Lock Contention Under Parallel Writes",
+      "type": "PERFORMANCE",
+      "priority": "P1",
+      "preconditions": [
+        "Root category created for stress testing (ID 999)",
+        "50 parallel API workers initialized with mutating tokens"
+      ],
+      "testDataRequirements": {
+        "concurrentWorkers": 50,
+        "writePayloadTemplate": {
+          "name": "Concurrent Subcategory ${workerId}-${iteration}",
+          "parent": 999
+        }
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Dispatch 50 concurrent POST requests to /api/part/category/ creating subcategories under parent 999",
+          "expectedResult": "All 50 categories created with HTTP 201 Created; zero deadlock exceptions (40001 / SQLITE_BUSY / Deadlock detected)"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Assert tree pathstring recalculation integrity and write latency",
+          "expectedResult": "p95 write latency <= 1,000ms; tree lineage correctly points to parent 999 for all 50 children"
+        }
+      ],
+      "postConditions": [
+        "Database table locks released cleanly; category hierarchy remains mathematically valid"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    },
+    {
+      "id": "TC-INVENTREE-PERF-004",
+      "scenarioId": "SCN-INVENTREE-019",
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteriaId": "AC-INVENTREE-012",
+      "title": "PERF - Soak & Memory Stability Under Sustained Multi-Facet Queries",
+      "type": "PERFORMANCE",
+      "priority": "P2",
+      "preconditions": [
+        "Node and InvenTree application processes monitored with memory and connection telemetry hooks",
+        "Continuous 150 RPS background query load active"
+      ],
+      "testDataRequirements": {
+        "duration": "60m",
+        "steadyRps": 150
+      },
+      "steps": [
+        {
+          "stepIndex": 1,
+          "action": "Execute steady-state search and part retrieval traffic at 150 RPS continuously for 60 minutes",
+          "expectedResult": "System maintains consistent latency without performance degradation over the 60-minute duration"
+        },
+        {
+          "stepIndex": 2,
+          "action": "Compare Resident Set Size (RSS) memory consumption between minute 5 and minute 60",
+          "expectedResult": "RSS memory growth <= 5% (demonstrating absence of ORM object or cache memory leaks)"
+        },
+        {
+          "stepIndex": 3,
+          "action": "Verify database connection pool active vs idle connection counters",
+          "expectedResult": "Zero leaked connections; pool returns to baseline idle level upon test completion"
+        }
+      ],
+      "postConditions": [
+        "Zero memory leaks or zombie threads observed during soak run"
+      ],
+      "status": "APPROVED",
+      "createdAt": "2026-10-04T14:45:00.000Z"
+    }
+  ]
+}

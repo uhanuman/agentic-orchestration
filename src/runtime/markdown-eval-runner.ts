@@ -26,6 +26,8 @@ export interface EvaluatorResult {
   metadata?: Record<string, any>;
 }
 
+export type EvalExecutionResult = EvaluatorResult;
+
 export class MarkdownEvalRunner {
   public readonly spec: MarkdownSpec;
   public readonly evaluatorId: string;

@@ -6,6 +6,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { PathResolver } from '../core/path-resolver';
 
 export interface MarkdownSpec {
   raw: string;
@@ -123,7 +124,8 @@ export class MarkdownSpecParser {
     return direct;
   }
 
-  public static parseContent(content: string, resolvedPath?: string): MarkdownSpec {
+  public static parseContent(rawContent: string, resolvedPath?: string): MarkdownSpec {
+    const content = PathResolver.interpolateVariables(rawContent);
     const metadata: Record<string, string> = {};
     const metadataArrays: Record<string, string[]> = {};
     const sections: Record<string, string> = {};

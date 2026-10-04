@@ -1,0 +1,106 @@
+{
+  "matrixTitle": "End-to-End Enterprise Traceability Matrix",
+  "generatedAt": "2026-10-04T15:00:00.000Z",
+  "referentialIntegrityScore": 1.0,
+  "lineageNodesCount": {
+    "requirements": 1,
+    "acceptanceCriteria": 13,
+    "scenarios": 24,
+    "testCases": 37,
+    "blueprints": 37,
+    "releaseRecords": 1
+  },
+  "lineageGraph": [
+    {
+      "requirementId": "REQ-INVENTREE-PART-001",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-INVENTREE-001",
+          "scenarios": ["SCN-INVENTREE-001", "SCN-INVENTREE-002"],
+          "testCases": ["TC-INVENTREE-001", "TC-INVENTREE-002", "TC-INVENTREE-PERF-003"],
+          "blueprints": ["AUT-INVENTREE-001", "AUT-INVENTREE-002", "AUT-INVENTREE-032"]
+        },
+        {
+          "id": "AC-INVENTREE-002",
+          "scenarios": ["SCN-INVENTREE-003", "SCN-INVENTREE-023"],
+          "testCases": ["TC-INVENTREE-003", "TC-INVENTREE-023", "TC-INVENTREE-A11Y-001"],
+          "blueprints": ["AUT-INVENTREE-003", "AUT-INVENTREE-023", "AUT-INVENTREE-034"]
+        },
+        {
+          "id": "AC-INVENTREE-003",
+          "scenarios": ["SCN-INVENTREE-004", "SCN-INVENTREE-005"],
+          "testCases": ["TC-INVENTREE-004", "TC-INVENTREE-005"],
+          "blueprints": ["AUT-INVENTREE-004", "AUT-INVENTREE-005"]
+        },
+        {
+          "id": "AC-INVENTREE-004",
+          "scenarios": ["SCN-INVENTREE-006", "SCN-INVENTREE-007"],
+          "testCases": ["TC-INVENTREE-006", "TC-INVENTREE-007"],
+          "blueprints": ["AUT-INVENTREE-006", "AUT-INVENTREE-007"]
+        },
+        {
+          "id": "AC-INVENTREE-005",
+          "scenarios": ["SCN-INVENTREE-008", "SCN-INVENTREE-009"],
+          "testCases": ["TC-INVENTREE-008", "TC-INVENTREE-009"],
+          "blueprints": ["AUT-INVENTREE-008", "AUT-INVENTREE-009"]
+        },
+        {
+          "id": "AC-INVENTREE-006",
+          "scenarios": ["SCN-INVENTREE-010", "SCN-INVENTREE-011", "SCN-INVENTREE-024"],
+          "testCases": [
+            "TC-INVENTREE-010", "TC-INVENTREE-011", "TC-INVENTREE-024",
+            "TC-INVENTREE-SEC-003", "TC-INVENTREE-SEC-004",
+            "TC-INVENTREE-A11Y-002", "TC-INVENTREE-A11Y-003", "TC-INVENTREE-A11Y-004"
+          ],
+          "blueprints": [
+            "AUT-INVENTREE-010", "AUT-INVENTREE-011", "AUT-INVENTREE-024",
+            "AUT-INVENTREE-027", "AUT-INVENTREE-028",
+            "AUT-INVENTREE-035", "AUT-INVENTREE-036", "AUT-INVENTREE-037"
+          ]
+        },
+        {
+          "id": "AC-INVENTREE-007",
+          "scenarios": ["SCN-INVENTREE-012", "SCN-INVENTREE-0013"],
+          "testCases": ["TC-INVENTREE-012", "TC-INVENTREE-013", "TC-INVENTREE-PERF-002"],
+          "blueprints": ["AUT-INVENTREE-012", "AUT-INVENTREE-013", "AUT-INVENTREE-031"]
+        },
+        {
+          "id": "AC-INVENTREE-008",
+          "scenarios": ["SCN-INVENTREE-014"],
+          "testCases": ["TC-INVENTREE-014", "TC-INVENTREE-SEC-002"],
+          "blueprints": ["AUT-INVENTREE-014", "AUT-INVENTREE-026"]
+        },
+        {
+          "id": "AC-INVENTREE-009",
+          "scenarios": ["SCN-INVENTREE-015"],
+          "testCases": ["TC-INVENTREE-015"],
+          "blueprints": ["AUT-INVENTREE-015"]
+        },
+        {
+          "id": "AC-INVENTREE-010",
+          "scenarios": ["SCN-INVENTREE-016"],
+          "testCases": ["TC-INVENTREE-016"],
+          "blueprints": ["AUT-INVENTREE-016"]
+        },
+        {
+          "id": "AC-INVENTREE-011",
+          "scenarios": ["SCN-INVENTREE-017", "SCN-INVENTREE-018"],
+          "testCases": ["TC-INVENTREE-017", "TC-INVENTREE-018"],
+          "blueprints": ["AUT-INVENTREE-017", "AUT-INVENTREE-018"]
+        },
+        {
+          "id": "AC-INVENTREE-012",
+          "scenarios": ["SCN-INVENTREE-019", "SCN-INVENTREE-020"],
+          "testCases": ["TC-INVENTREE-019", "TC-INVENTREE-020", "TC-INVENTREE-PERF-001", "TC-INVENTREE-PERF-004"],
+          "blueprints": ["AUT-INVENTREE-019", "AUT-INVENTREE-020", "AUT-INVENTREE-030", "AUT-INVENTREE-033"]
+        },
+        {
+          "id": "AC-INVENTREE-013",
+          "scenarios": ["SCN-INVENTREE-021", "SCN-INVENTREE-022"],
+          "testCases": ["TC-INVENTREE-021", "TC-INVENTREE-022", "TC-INVENTREE-SEC-001", "TC-INVENTREE-SEC-005"],
+          "blueprints": ["AUT-INVENTREE-021", "AUT-INVENTREE-022", "AUT-INVENTREE-025", "AUT-INVENTREE-029"]
+        }
+      ]
+    }
+  ]
+}

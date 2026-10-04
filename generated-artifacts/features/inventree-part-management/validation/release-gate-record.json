@@ -1,0 +1,79 @@
+{
+  "id": "REL-INVENTREE-001",
+  "releaseId": "REL-INVENTREE-CORE-001",
+  "featureSlug": "inventree-part-management",
+  "version": "1.0.0",
+  "gateStatus": "PASSED",
+  "evaluatedAt": "2026-10-04T15:00:00.000Z",
+  "gateAuditTrail": [
+    {
+      "stage": "01.requirement-analysis",
+      "gate": "GATE-REQ-001",
+      "severity": "MAJOR",
+      "status": "PASSED",
+      "score": 0.98,
+      "minScoreThreshold": 0.85,
+      "evaluators": [
+        { "id": "EVAL-SCHEMA-001", "score": 1.0, "status": "PASSED" },
+        { "id": "EVAL-AMBIGUITY-SEMANTIC", "score": 0.96, "status": "PASSED" }
+      ]
+    },
+    {
+      "stage": "02.test-design",
+      "gate": "GATE-TEST-DESIGN-001",
+      "severity": "MAJOR",
+      "status": "PASSED",
+      "score": 0.99,
+      "minScoreThreshold": 0.85,
+      "evaluators": [
+        { "id": "EVAL-REFERENTIAL-001", "score": 1.0, "status": "PASSED" },
+        { "id": "EVAL-COVERAGE-001", "score": 1.0, "status": "PASSED" },
+        { "id": "EVAL-COMPLETENESS-SEMANTIC", "score": 0.98, "status": "PASSED" }
+      ]
+    },
+    {
+      "stage": "03.nfr-workforce",
+      "gate": "GATE-SEC-001 / GATE-PERF-001 / GATE-A11Y-001",
+      "severity": "CRITICAL / MAJOR",
+      "status": "PASSED",
+      "score": 1.0,
+      "minScoreThreshold": 0.85,
+      "evaluators": [
+        { "id": "EVAL-REFERENTIAL-001", "score": 1.0, "status": "PASSED" },
+        { "id": "EVAL-SEC-OWASP", "score": 1.0, "status": "PASSED" },
+        { "id": "EVAL-PERF-SLA", "score": 1.0, "status": "PASSED" },
+        { "id": "EVAL-A11Y-WCAG", "score": 1.0, "status": "PASSED" }
+      ]
+    },
+    {
+      "stage": "04.sdet-blueprint",
+      "gate": "GATE-SDET-001",
+      "severity": "MAJOR",
+      "status": "PASSED",
+      "score": 1.0,
+      "minScoreThreshold": 0.80,
+      "evaluators": [
+        { "id": "EVAL-TEST-COVERAGE-001", "score": 1.0, "status": "PASSED" },
+        { "id": "EVAL-HARNESS-EXECUTION", "score": 1.0, "status": "PASSED" }
+      ]
+    },
+    {
+      "stage": "05.test-validation",
+      "gate": "GATE-VAL-001",
+      "severity": "CRITICAL",
+      "status": "PASSED",
+      "score": 0.98,
+      "minScoreThreshold": 0.90,
+      "evaluators": [
+        { "id": "EVAL-DRIFT-SEMANTIC", "score": 0.98, "status": "PASSED", "hallucinationIndex": 0.02 }
+      ]
+    }
+  ],
+  "authorizationVerdict": {
+    "decision": "AUTHORIZED_FOR_RELEASE",
+    "zeroBypassIntegrity": true,
+    "unwaivedFailures": 0,
+    "humanWaiversRequired": 0,
+    "signOff": "Principal Quality Engineering Orchestrator"
+  }
+}

@@ -98,15 +98,243 @@ export class MockLLMProvider implements ILLMProvider {
   }
 
   private registerDefaultFixtures(): void {
+    // 0. InvenTree Part & Category Requirement Analysis Fixture
+    this.registerFixture({
+      id: 'inventree-part-req-analysis',
+      matcher: p =>
+        (p.systemPrompt.includes('AGT-REQ') ||
+          p.systemPrompt.includes('AGT-REQUIREMENT') ||
+          p.userPrompt.includes('Requirement Analysis') ||
+          p.userPrompt.includes('InvenTree')) &&
+        (p.userPrompt.includes('InvenTree') ||
+          p.userPrompt.includes('/api/part/') ||
+          p.userPrompt.includes('Part Category')),
+      response: (params: StructuredGenerationParams) => {
+        const now = new Date().toISOString();
+        return {
+          requirement: {
+            id: 'REQ-INVENTREE-PART-001',
+            version: 1,
+            epicId: 'EPIC-INVENTREE-CORE',
+            featureName: 'Part & Part Category Lifecycle Management',
+            title: 'InvenTree Part and Part Category Management & Authentication',
+            rawText: params.userPrompt,
+            domain: 'Inventory & Manufacturing Engineering',
+            priority: 'HIGH',
+            risksIdentified: [
+              {
+                riskId: 'RISK-INVENTREE-01',
+                description: 'Accidental cascade deletion of a non-empty Part Category causing orphan deletion of associated BOM components and stock items',
+                severity: 'CRITICAL',
+              },
+              {
+                riskId: 'RISK-INVENTREE-02',
+                description: 'Bypassing token-based authentication on write endpoints allows anonymous or unprivileged callers to mutate production catalogs',
+                severity: 'CRITICAL',
+              },
+              {
+                riskId: 'RISK-INVENTREE-03',
+                description: 'Concurrent PUT and PATCH operations without optimistic concurrency control resulting in lost updates to active status or IPN',
+                severity: 'HIGH',
+              },
+              {
+                riskId: 'RISK-INVENTREE-04',
+                description: 'Search & filter latency degradation on large catalogs (>100k parts) when filtering by deep category trees without database indices',
+                severity: 'HIGH',
+              },
+              {
+                riskId: 'RISK-INVENTREE-05',
+                description: 'State desynchronization between Category Tree View UI and Parts List filtering when toggling active status on subcategories',
+                severity: 'MEDIUM',
+              },
+            ],
+            ambiguities: [
+              'Non-empty category deletion policy: whether deletion rejects with 400/409, moves child parts to parent, or supports cascade flag',
+              'Authentication header tolerance: whether Authorization: Bearer is accepted alongside Authorization: Token',
+              'Pagination defaults and maximum limits for GET /api/part/ and GET /api/part/category/',
+              'Internal Part Number (IPN) uniqueness scope: globally unique or unique within category',
+            ],
+            dependencies: [
+              'AUTH-TOKEN-SERVICE',
+              'COMPANY-SUPPLIER-SERVICE',
+              'STOCK-INVENTORY-SERVICE',
+              'BUILD-ASSEMBLY-SERVICE',
+            ],
+            status: 'REVIEWED',
+            createdAt: now,
+            updatedAt: now,
+          },
+          acceptanceCriteria: [
+            {
+              id: 'AC-INVENTREE-101',
+              requirementId: 'REQ-INVENTREE-PART-001',
+              version: 1,
+              given: [
+                'User possesses a valid API authentication token with category write privileges',
+                'InvenTree database contains root and nested category hierarchies',
+              ],
+              when: 'User invokes category CRUD operations via GET, POST, PUT, DELETE /api/part/category/* or Category Tree UI',
+              then: [
+                'POST /api/part/category/ creates new category supporting nullable parent field, returning HTTP 201 Created',
+                'GET /api/part/category/ returns hierarchical category list with parent-child linkage',
+                'GET /api/part/category/{id}/ returns single category details with path breadcrumbs',
+                'PUT /api/part/category/{id}/ updates category attributes and re-parents safely',
+                'DELETE /api/part/category/{id}/ rejects deletion with HTTP 400/409 if category contains child parts or subcategories unless cascade confirmed',
+                'Category Tree View in UI reflects structural changes immediately without full page reload',
+              ],
+              businessRules: [
+                'Root categories have parent = null',
+                'Circular parent references (e.g. category A -> parent B -> parent A) are rejected with HTTP 400',
+                'Category name is required, max 100 characters',
+                'Non-empty categories cannot be silently deleted without user confirmation',
+              ],
+              isTestable: true,
+              testabilityRationale: 'Fully verifiable via REST API assertions on /api/part/category/* and Playwright tree view UI automation',
+              status: 'VALIDATED',
+              createdAt: now,
+            },
+            {
+              id: 'AC-INVENTREE-102',
+              requirementId: 'REQ-INVENTREE-PART-001',
+              version: 1,
+              given: [
+                'User is authenticated with a valid API token',
+                'At least one valid Part Category exists in the system',
+              ],
+              when: 'User requests part creation via POST /api/part/ or retrieves part detail via GET /api/part/{id}/ (or UI /part/{id}/)',
+              then: [
+                'POST /api/part/ with valid name and category creates part and returns HTTP 201 Created with assigned part ID',
+                'POST /api/part/ missing mandatory fields (name, category) returns HTTP 400 Bad Request with field-level validation errors',
+                'GET /api/part/{id}/ returns HTTP 200 OK with complete part metadata (name, IPN, category, active status, stock totals)',
+                'GET /api/part/{nonExistentId}/ returns HTTP 404 Not Found',
+                'UI page /part/{id}/ renders complete part details, category link, and status indicators',
+              ],
+              businessRules: [
+                'Part name is mandatory, 1 to 100 characters',
+                'Category is mandatory and must point to an existing Category ID',
+                'Default active status is true upon creation unless explicitly specified as false',
+              ],
+              isTestable: true,
+              testabilityRationale: 'Testable via automated API contract testing and UI Create Part form validation suite',
+              status: 'VALIDATED',
+              createdAt: now,
+            },
+            {
+              id: 'AC-INVENTREE-103',
+              requirementId: 'REQ-INVENTREE-PART-001',
+              version: 1,
+              given: [
+                'An existing Part entity exists in InvenTree',
+                'User holds a valid API authentication token with part management permissions',
+              ],
+              when: 'User performs full update (PUT /api/part/{id}/), partial update (PATCH /api/part/{id}/), or deletion (DELETE /api/part/{id}/)',
+              then: [
+                'PUT /api/part/{id}/ replaces all part fields, returning HTTP 200 OK with updated entity representation',
+                'PATCH /api/part/{id}/ modifies only supplied fields (e.g. toggling active=false or updating description) while preserving unchanged fields, returning HTTP 200 OK',
+                'DELETE /api/part/{id}/ on an unlocked part with zero active stock or build references returns HTTP 204 No Content',
+                'DELETE /api/part/{id}/ on a part referenced in active Stock Items, Builds, or Purchase Orders returns HTTP 400/409 Conflict preventing referential integrity violation',
+                'Locked parts reject PUT and PATCH mutations with HTTP 403 or HTTP 400 until unlocked by administrator',
+              ],
+              businessRules: [
+                'PUT requires all mandatory fields (name, category); omitted required fields trigger HTTP 400',
+                'PATCH allows partial payload down to a single attribute update',
+                'Referential integrity protects active manufacturing inventory from orphan hard deletion',
+              ],
+              isTestable: true,
+              testabilityRationale: 'Directly verifiable via REST client mutation matrix and UI modal edit/delete interactions',
+              status: 'VALIDATED',
+              createdAt: now,
+            },
+            {
+              id: 'AC-INVENTREE-104',
+              requirementId: 'REQ-INVENTREE-PART-001',
+              version: 1,
+              given: [
+                'Catalog populated with diverse active and inactive parts distributed across multiple categories',
+              ],
+              when: 'User queries GET /api/part/?category={id}&active={true|false}&search={keyword} or uses UI /part/ search and filter controls',
+              then: [
+                'Filtering by category={id} returns only parts assigned to the specified category',
+                'Filtering by active=true returns only active parts; active=false returns only inactive/obsolete parts',
+                'Querying search={keyword} performs case-insensitive substring search matching name, IPN, and description',
+                'Combining multiple filters (category + active + search) applies logical AND conjunction',
+                'API returns paginated response envelope with count, next, previous, and results array',
+                'UI /part/ list dynamically updates table records according to selected search and filter facets',
+              ],
+              businessRules: [
+                'Empty filter query returns all parts subject to default pagination limit (default 25 items)',
+                'Search terms are sanitized against SQL/ORM injection',
+                'Pagination offset/limit or page parameters must reject negative integers with HTTP 400',
+              ],
+              isTestable: true,
+              testabilityRationale: 'Testable via parametric data-driven API assertions and Playwright search/filter UI assertions',
+              status: 'VALIDATED',
+              createdAt: now,
+            },
+            {
+              id: 'AC-INVENTREE-105',
+              requirementId: 'REQ-INVENTREE-PART-001',
+              version: 1,
+              given: [
+                'InvenTree API endpoints for Part and Part Category write operations (/api/part/* and /api/part/category/*)',
+              ],
+              when: 'Client dispatches POST, PUT, PATCH, or DELETE requests with missing, invalid, or valid authentication credentials',
+              then: [
+                'Request without Authorization header is rejected with HTTP 401 Unauthorized and {"detail": "Authentication credentials were not provided."}',
+                'Request with malformed or invalid token is rejected with HTTP 401 Unauthorized and {"detail": "Invalid token."}',
+                'Request with valid token lacking write permissions is rejected with HTTP 403 Forbidden',
+                'Request with valid Authorization: Token <token> header and write permissions succeeds with appropriate 2xx response',
+              ],
+              businessRules: [
+                'Token-based authentication is strictly mandatory for all write operations across /api/part/ and /api/part/category/',
+                'Header format must adhere to Authorization: Token <hex_token>',
+                'Failed authentication attempts must be logged in security audit trail without logging token secrets',
+              ],
+              isTestable: true,
+              testabilityRationale: 'Verifiable through positive and negative API security test suites using valid, malformed, and omitted tokens',
+              status: 'VALIDATED',
+              createdAt: now,
+            },
+            {
+              id: 'AC-INVENTREE-106',
+              requirementId: 'REQ-INVENTREE-PART-001',
+              version: 1,
+              given: [
+                'Authenticated user operating the InvenTree web frontend',
+              ],
+              when: 'User navigates between /part/ list page, /part/{id}/ detail page, Part Category tree view, and Create/Edit forms',
+              then: [
+                'Category tree view renders nested hierarchy with expandable and collapsible folder nodes',
+                'Clicking a category node in the tree filters the adjacent /part/ list view to parts in that category',
+                'Create Part modal/form provides client-side validation for required fields (name, category) before submission',
+                'Part detail page /part/{id}/ renders tabs for details, parameters, BOM, and stock allocations',
+                'All interactive UI controls support keyboard navigation (Tab, Enter, Space) and conform to WCAG 2.1 AA accessibility guidelines',
+              ],
+              businessRules: [
+                'Form submission buttons remain disabled or indicate validation errors until required inputs are valid',
+                'Category tree view preserves expansion state during in-page navigation',
+              ],
+              isTestable: true,
+              testabilityRationale: 'Fully verifiable using Playwright end-to-end browser automation, axe-core a11y testing, and user journey scripts',
+              status: 'VALIDATED',
+              createdAt: now,
+            },
+          ],
+        };
+      },
+    });
+
     // 1. Requirement Analysis Agent Fixture
     this.registerFixture({
       id: 'default-req-analysis',
       matcher: p =>
-        p.systemPrompt.includes('AGT-REQ-001') ||
-        p.systemPrompt.includes('AGT-REQUIREMENT-001') ||
-        p.userPrompt.includes('Requirement Analysis') ||
-        p.userPrompt.includes('As a user') ||
-        p.userPrompt.includes('As a customer'),
+        !p.userPrompt.includes('InvenTree') &&
+        !p.userPrompt.includes('/api/part/') &&
+        (p.systemPrompt.includes('AGT-REQ-001') ||
+          p.systemPrompt.includes('AGT-REQUIREMENT-001') ||
+          p.userPrompt.includes('Requirement Analysis') ||
+          p.userPrompt.includes('As a user') ||
+          p.userPrompt.includes('As a customer')),
       response: (params: StructuredGenerationParams) => {
         const now = new Date().toISOString();
         return {

@@ -1,0 +1,64 @@
+{
+  "id": "REQ-INVENTREE-PART-001",
+  "version": 1,
+  "epicId": "EPIC-INVENTREE-CORE",
+  "featureName": "Part & Part Category Lifecycle Management",
+  "title": "InvenTree Part & Part Category Lifecycle Management and Token Authentication",
+  "rawText": "Allows authenticated users to manage the complete lifecycle of Part and Part Category entities in InvenTree (>= 0.15.x) through REST API endpoints and web UI interfaces, enforcing hierarchical category tree structures, referential integrity across parts and stock, unique internal part numbers (IPN), multi-facet search/filtering, and token-based authorization (Authorization: Token <token>).",
+  "domain": "Inventory & Manufacturing Engineering",
+  "priority": "HIGH",
+  "risksIdentified": [
+    {
+      "riskId": "RISK-INVENTREE-001",
+      "description": "Accidental or unconstrained cascade deletion of a non-empty Part Category causing orphan deletion or unintended detachment of child categories and assigned parts, compromising inventory traceability.",
+      "severity": "CRITICAL"
+    },
+    {
+      "riskId": "RISK-INVENTREE-002",
+      "description": "Bypassing token-based authentication on mutating API endpoints (POST, PUT, PATCH, DELETE) allowing unauthenticated or unauthorized callers to alter production part catalogues.",
+      "severity": "CRITICAL"
+    },
+    {
+      "riskId": "RISK-INVENTREE-003",
+      "description": "Referential integrity violation when attempting to delete a Part currently referenced in active Stock Items or Bill of Materials (BOM) components, causing data corruption in manufacturing workflows.",
+      "severity": "CRITICAL"
+    },
+    {
+      "riskId": "RISK-INVENTREE-004",
+      "description": "Circular parent category hierarchy cycles (e.g., Category A -> Category B -> Category A) resulting in infinite recursion, stack overflows, or broken tree rendering during UI navigation and pathstring recalculation.",
+      "severity": "HIGH"
+    },
+    {
+      "riskId": "RISK-INVENTREE-005",
+      "description": "Race conditions and lost updates during concurrent PUT or PATCH mutations to /api/part/{id}/ regarding active status, IPN, or category assignments without optimistic concurrency control.",
+      "severity": "HIGH"
+    },
+    {
+      "riskId": "RISK-INVENTREE-006",
+      "description": "Search and multi-facet filtering query latency degradation exceeding the 2,000ms - 3,000ms SLA on catalogues exceeding 10,000 parts when database indices on category, active flag, and IPN/name are absent.",
+      "severity": "MEDIUM"
+    },
+    {
+      "riskId": "RISK-INVENTREE-007",
+      "description": "State desynchronization between Category Tree View expansion state and Part List table pagination/filter facets during rapid client-side navigation.",
+      "severity": "LOW"
+    }
+  ],
+  "ambiguities": [
+    "Cascade vs Block policy on category deletion: FA-005 specifies deletion may cascade or be rejected depending on instance configuration; tests must assert explicit rejection with HTTP 400 when cascade is disabled and require validation of configurable behavior.",
+    "Mutating endpoint unauthorized response code: FA-013 states unauthenticated requests must return HTTP 403 Forbidden, while standard Django REST Framework token authentication returns HTTP 401 Unauthorized; both status codes must be handled and validated in security test matrices.",
+    "Unauthenticated catalogue read access: FA-002 and FA-008 indicate public read access depends on instance configuration (LOGIN_REQUIRED setting); test suites must verify behavior under both public and private catalogue configurations.",
+    "Part search field boundaries: FA-007 specifies search matching name and IPN, while description search is unstated in rule 5; clarification boundaries set search index to name and IPN substring matching.",
+    "Form submission debouncing and latency: UI flow FA-012 mentions real-time or submit search updates; UI automated tests should assert a 300ms debounce threshold for live filtering."
+  ],
+  "dependencies": [
+    "DJANGO-REST-FRAMEWORK-AUTH",
+    "SQLITE-POSTGRESQL-PERSISTENCE",
+    "INVENTREE-CORE-MODELS",
+    "TOKEN-AUTHENTICATION-SERVICE"
+  ],
+  "status": "APPROVED",
+  "createdAt": "2026-10-03T23:21:14.000Z",
+  "updatedAt": "2026-10-03T23:21:14.000Z"
+}
+
